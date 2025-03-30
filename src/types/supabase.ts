@@ -8,8 +8,8 @@ export type User = {
 export type Profile = {
   id: string;
   email: string;
-  is_admin?: boolean;
   role?: string;
+  is_admin?: boolean;
   updated_at?: string;
   created_at?: string;
 }
