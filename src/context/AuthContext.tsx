@@ -42,9 +42,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      console.log('Profile data:', data); // Debug log to see the profile data
+      
       setProfile(data);
-      // Check if the user is an admin based on the role property
-      setIsAdmin(data?.role === 'admin' || false);
+      // Check if the user is an admin based on the role property OR is_admin flag
+      // This provides backward compatibility
+      setIsAdmin(data?.role === 'admin' || data?.is_admin === true || false);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }

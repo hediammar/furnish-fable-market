@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -12,7 +12,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false,
   redirectTo = '/auth',
 }) => {
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isLoading, profile } = useAuth();
+  const location = useLocation();
+
+  // Debug logs to help troubleshoot
+  useEffect(() => {
+    console.log('ProtectedRoute for path:', location.pathname);
+    console.log('User authenticated:', !!user);
+    console.log('Admin required:', requireAdmin);
+    console.log('Is admin:', isAdmin);
+    console.log('Profile:', profile);
+  }, [user, isAdmin, requireAdmin, location.pathname, profile]);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -26,6 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check if admin access is required but user is not an admin
   if (requireAdmin && !isAdmin) {
+    console.log('Admin access denied - redirecting to home');
     return <Navigate to="/" replace />;
   }
 

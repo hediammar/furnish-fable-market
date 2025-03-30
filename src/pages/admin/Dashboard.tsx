@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Package, ShoppingBag, Users, Tag, LayoutDashboard, LogOut } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -10,12 +10,32 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 
 const AdminDashboard = () => {
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, isAdmin, user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  const navigate = useNavigate();
   
-  if (!profile?.is_admin) {
+  // Debug logging
+  useEffect(() => {
+    console.log('AdminDashboard: User:', user);
+    console.log('AdminDashboard: Profile:', profile);
+    console.log('AdminDashboard: Is Admin:', isAdmin);
+  }, [user, profile, isAdmin]);
+  
+  // Redirect non-admin users
+  useEffect(() => {
+    if (profile && !isAdmin) {
+      toast({
+        title: 'Access Denied',
+        description: 'You don\'t have permission to access the admin dashboard.',
+        variant: 'destructive',
+      });
+      navigate('/');
+    }
+  }, [profile, isAdmin, navigate, toast]);
+  
+  if (!isAdmin) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
@@ -103,7 +123,7 @@ const AdminDashboard = () => {
         
         <div className="pt-6 mt-auto">
           <div className="px-3 py-2 text-sm text-muted-foreground">
-            Signed in as: <span className="font-medium">{profile.email}</span>
+            Signed in as: <span className="font-medium">{profile?.email}</span>
           </div>
           <Button 
             variant="ghost" 
