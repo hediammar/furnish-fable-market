@@ -17,6 +17,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ProductsManagement from "./pages/admin/ProductsManagement";
+import CategoriesManagement from "./pages/admin/CategoriesManagement";
 import Overview from "./pages/admin/Overview";
 
 const queryClient = new QueryClient();
@@ -52,7 +53,7 @@ const App = () => (
                     <Route path="products/new" element={<div>Add Product Form (To Be Implemented)</div>} />
                     <Route path="products/edit/:id" element={<div>Edit Product Form (To Be Implemented)</div>} />
                     <Route path="orders" element={<div>Orders Management (To Be Implemented)</div>} />
-                    <Route path="categories" element={<div>Categories Management (To Be Implemented)</div>} />
+                    <Route path="categories" element={<CategoriesManagement />} />
                     <Route path="users" element={<div>Users Management (To Be Implemented)</div>} />
                   </Route>
                 </Route>
