@@ -42,12 +42,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      console.log('Profile data:', data); // Debug log to see the profile data
+      console.log('Profile data fetched:', data); // Debug log
       
       setProfile(data);
-      // Check if the user is an admin based on the role property OR is_admin flag
-      // This provides backward compatibility
-      setIsAdmin(data?.role === 'admin' || data?.is_admin === true || false);
+      
+      // Check for admin status - check both role and is_admin to ensure compatibility
+      const adminRole = data?.role === 'admin';
+      const adminFlag = data?.is_admin === true;
+      
+      console.log('Admin checks:', { adminRole, adminFlag, role: data?.role, is_admin: data?.is_admin });
+      
+      // Set admin if either condition is true
+      setIsAdmin(adminRole || adminFlag);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -60,6 +66,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Set up auth state listener first
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, newSession) => {
+          console.log('Auth state changed:', event, newSession?.user?.id);
+          
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
@@ -79,6 +87,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Check for existing session
       const { data } = await supabase.auth.getSession();
+      console.log('Initial session check:', data.session?.user?.id);
+      
       setSession(data.session);
       setUser(data.session?.user ?? null);
       
