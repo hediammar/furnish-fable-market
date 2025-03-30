@@ -90,9 +90,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
               <div className="space-y-2">
                 <h3 className="font-medium">Dimensions</h3>
                 <p className="text-muted-foreground">
-                  W: {product.dimensions.width}{product.dimensions.unit} × 
-                  H: {product.dimensions.height}{product.dimensions.unit} × 
-                  D: {product.dimensions.depth}{product.dimensions.unit}
+                  {product.dimensions}
                 </p>
               </div>
             )}

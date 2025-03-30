@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import ProductDetail from '@/components/product/ProductDetail';
@@ -20,12 +19,7 @@ const productData: Product = {
   ],
   category: 'Living Room',
   material: 'Italian Leather, Solid Oak',
-  dimensions: {
-    width: 220,
-    height: 85,
-    depth: 95,
-    unit: 'cm'
-  },
+  dimensions: 'W: 220cm × H: 85cm × D: 95cm',
   inStock: true,
   featured: true
 };

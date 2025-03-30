@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import Hero from '@/components/home/Hero';
@@ -20,12 +19,7 @@ const featuredProducts: Product[] = [
     ],
     category: 'Living Room',
     material: 'Italian Leather, Solid Oak',
-    dimensions: {
-      width: 220,
-      height: 85,
-      depth: 95,
-      unit: 'cm'
-    },
+    dimensions: 'W: 220cm × H: 85cm × D: 95cm',
     inStock: true,
     featured: true
   },
@@ -42,12 +36,7 @@ const featuredProducts: Product[] = [
     ],
     category: 'Dining',
     material: 'Solid Oak, Stainless Steel',
-    dimensions: {
-      width: 180,
-      height: 75,
-      depth: 90,
-      unit: 'cm'
-    },
+    dimensions: 'W: 180cm × H: 75cm × D: 90cm',
     inStock: true,
     featured: true
   },
@@ -64,12 +53,7 @@ const featuredProducts: Product[] = [
     ],
     category: 'Bedroom',
     material: 'Solid Wood, Upholstered Fabric',
-    dimensions: {
-      width: 160,
-      height: 120,
-      depth: 210,
-      unit: 'cm'
-    },
+    dimensions: 'W: 160cm × H: 120cm × D: 210cm',
     inStock: true,
     featured: true,
     new: true
