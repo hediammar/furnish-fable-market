@@ -7,13 +7,9 @@ export interface Product {
   images: string[];
   category: string;
   material?: string;
-  dimensions?: {
-    width: number;
-    height: number;
-    depth: number;
-    unit: string;
-  };
+  dimensions?: string; // Changed from object to string to match Supabase schema
   inStock: boolean;
+  stock?: number; // Added to match what's used in ProductsManagement.tsx
   featured?: boolean;
   new?: boolean;
 }
