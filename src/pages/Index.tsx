@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ArrowRight } from 'lucide-react';
 import Hero from '@/components/home/Hero';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import { Product } from '@/types/product';
