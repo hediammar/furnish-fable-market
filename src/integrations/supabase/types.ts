@@ -191,6 +191,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_admin: boolean | null
           role: string | null
           updated_at: string
         }
@@ -198,6 +199,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          is_admin?: boolean | null
           role?: string | null
           updated_at?: string
         }
@@ -205,6 +207,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_admin?: boolean | null
           role?: string | null
           updated_at?: string
         }

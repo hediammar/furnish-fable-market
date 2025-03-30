@@ -69,9 +69,17 @@ const CategoriesManagement = () => {
   // Mutation to add a new category
   const addMutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      // Make sure name is required in the values
+      if (!values.name) {
+        throw new Error('Category name is required');
+      }
+      
       const { data, error } = await supabase
         .from('categories')
-        .insert([values])
+        .insert({
+          name: values.name,
+          description: values.description
+        })
         .select();
         
       if (error) throw error;
