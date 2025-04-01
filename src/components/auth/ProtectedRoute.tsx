@@ -12,17 +12,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false,
   redirectTo = '/auth',
 }) => {
-  const { user, isAdmin, isLoading, profile, refreshProfile } = useAuth();
+  const { user, isAdmin, isLoading, profile } = useAuth();
   const location = useLocation();
 
-  // Force profile refresh when entering a protected route
-  useEffect(() => {
-    if (user && !isLoading) {
-      refreshProfile();
-    }
-  }, [user, isLoading, refreshProfile]);
-
-  // Debug logs to help troubleshoot
+  // Debug logs to help troubleshoot - only log when the path changes to avoid excessive logging
   useEffect(() => {
     console.log('ProtectedRoute for path:', location.pathname);
     console.log('User authenticated:', !!user);
@@ -36,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         hasFlag: profile?.is_admin === true
       });
     }
-  }, [user, isAdmin, requireAdmin, location.pathname, profile]);
+  }, [location.pathname, user, isAdmin, requireAdmin, profile]);
 
   // Show loading while checking authentication
   if (isLoading) {

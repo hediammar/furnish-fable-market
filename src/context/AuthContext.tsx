@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/supabase';
@@ -26,9 +25,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+  const profileRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRefreshTimeRef = useRef<number>(0);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!user) return;
+
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < 2000) {
+      console.log('Skipping profile refresh - too soon since last refresh');
+      return;
+    }
+    
+    lastRefreshTimeRef.current = now;
 
     try {
       const { data, error } = await supabase
@@ -46,24 +55,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setProfile(data);
       
-      // Check for admin status - check both role and is_admin to ensure compatibility
       const adminRole = data?.role === 'admin';
       const adminFlag = data?.is_admin === true;
       
       console.log('Admin checks:', { adminRole, adminFlag, role: data?.role, is_admin: data?.is_admin });
       
-      // Set admin if either condition is true
       setIsAdmin(adminRole || adminFlag);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     const initialize = async () => {
       setIsLoading(true);
       
-      // Set up auth state listener first
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, newSession) => {
           console.log('Auth state changed:', event, newSession?.user?.id);
@@ -77,15 +83,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           
           if (newSession?.user) {
-            // Use setTimeout to avoid potential deadlocks
-            setTimeout(() => {
+            if (profileRefreshTimeoutRef.current) {
+              clearTimeout(profileRefreshTimeoutRef.current);
+            }
+            
+            profileRefreshTimeoutRef.current = setTimeout(() => {
               refreshProfile();
-            }, 0);
+            }, 300);
           }
         }
       );
       
-      // Check for existing session
       const { data } = await supabase.auth.getSession();
       console.log('Initial session check:', data.session?.user?.id);
       
@@ -100,11 +108,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return () => {
         subscription.unsubscribe();
+        if (profileRefreshTimeoutRef.current) {
+          clearTimeout(profileRefreshTimeoutRef.current);
+        }
       };
     };
     
     initialize();
-  }, []);
+  }, [refreshProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
