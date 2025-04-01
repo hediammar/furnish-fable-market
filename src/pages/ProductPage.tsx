@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import ProductDetail from '@/components/product/ProductDetail';
@@ -11,6 +12,7 @@ const productData: Product = {
   name: 'Milan Leather Sofa',
   description: 'A luxurious Italian leather sofa with clean lines and timeless design. Perfect for modern living spaces. The Milan Leather Sofa features down-filled cushions for exceptional comfort and a kiln-dried hardwood frame for durability and stability. The rich, full-grain leather develops a beautiful patina over time, making each piece unique.',
   price: 1899.99,
+  discount: 15, // 15% discount
   images: [
     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
     'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',

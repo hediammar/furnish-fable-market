@@ -12,6 +12,7 @@ export interface Product {
   stock?: number; // Added to match what's used in ProductsManagement.tsx
   featured?: boolean;
   new?: boolean;
+  discount?: number; // Added discount field
 }
 
 export interface CartItem {

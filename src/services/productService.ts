@@ -94,6 +94,7 @@ export const fetchProducts = async (filters?: {
     name: item.name,
     description: item.description || '',
     price: item.price,
+    discount: item.discount,
     images: item.images || [],
     category: item.category || '',
     material: item.material,
@@ -125,6 +126,7 @@ export const fetchProductById = async (id: string) => {
     name: data.name,
     description: data.description || '',
     price: data.price,
+    discount: data.discount,
     images: data.images || [],
     category: data.category || '',
     material: data.material,
@@ -158,6 +160,7 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
     name: product.name,
     description: product.description,
     price: product.price,
+    discount: product.discount,
     images: product.images,
     category: product.category,
     material: product.material,
@@ -184,6 +187,7 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
     name: data.name,
     description: data.description || '',
     price: data.price,
+    discount: data.discount,
     images: data.images || [],
     category: data.category || '',
     material: data.material,
@@ -204,6 +208,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   if (updates.name !== undefined) dbUpdates.name = updates.name;
   if (updates.description !== undefined) dbUpdates.description = updates.description;
   if (updates.price !== undefined) dbUpdates.price = updates.price;
+  if (updates.discount !== undefined) dbUpdates.discount = updates.discount;
   if (updates.images !== undefined) dbUpdates.images = updates.images;
   if (updates.category !== undefined) dbUpdates.category = updates.category;
   if (updates.material !== undefined) dbUpdates.material = updates.material;
@@ -233,6 +238,7 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
     name: data.name,
     description: data.description || '',
     price: data.price,
+    discount: data.discount,
     images: data.images || [],
     category: data.category || '',
     material: data.material,

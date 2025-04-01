@@ -18,10 +18,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     addToCart(product, quantity);
   };
 
+  // Calculate the final price after discount
+  const finalPrice = product.discount 
+    ? product.price * (1 - product.discount / 100)
+    : product.price;
+
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(product.price);
+  }).format(finalPrice);
+
+  const formattedOriginalPrice = product.discount 
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(product.price)
+    : null;
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -70,7 +82,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
               <p className="text-muted-foreground">{product.category}</p>
             </div>
 
-            <div className="text-2xl font-semibold">{formattedPrice}</div>
+            <div className="flex items-center">
+              <div className="text-2xl font-semibold">{formattedPrice}</div>
+              {product.discount && formattedOriginalPrice && (
+                <>
+                  <div className="text-lg text-muted-foreground line-through ml-4">
+                    {formattedOriginalPrice}
+                  </div>
+                  <div className="ml-4 bg-red-100 text-red-800 px-2 py-0.5 rounded text-sm font-medium">
+                    {product.discount}% OFF
+                  </div>
+                </>
+              )}
+            </div>
 
             <Separator />
 

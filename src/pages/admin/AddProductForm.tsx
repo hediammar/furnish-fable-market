@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,14 +14,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet-async';
-import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Image, Loader2, Save, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Product } from '@/types/product';
+import { supabase } from '@/integrations/supabase/client';
+
+// Available materials for the dropdown
+const AVAILABLE_MATERIALS = [
+  'Wood',
+  'Metal',
+  'Leather',
+  'Fabric',
+  'Glass',
+  'Plastic',
+  'Stone',
+  'Ceramic',
+  'Bamboo',
+  'Rattan'
+];
 
 const productSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters' }),
   price: z.coerce.number().positive({ message: 'Price must be a positive number' }),
+  discount: z.coerce.number().min(0).max(100).optional(),
   category: z.string().min(1, { message: 'Please select a category' }),
   stock: z.coerce.number().int().nonnegative({ message: 'Stock must be a non-negative integer' }),
   material: z.string().optional(),
@@ -38,6 +54,8 @@ const AddProductForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   // Fetch categories
   const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
@@ -51,6 +69,7 @@ const AddProductForm = () => {
       name: '',
       description: '',
       price: 0,
+      discount: 0,
       category: '',
       stock: 0,
       material: '',
@@ -69,6 +88,7 @@ const AddProductForm = () => {
         name: data.name,
         description: data.description,
         price: data.price,
+        discount: data.discount,
         category: data.category,
         images: data.images || [],
         inStock: data.inStock ?? true,
@@ -114,6 +134,62 @@ const AddProductForm = () => {
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const imageUrls = e.target.value.trim().split(/\s*,\s*/);
     form.setValue('images', imageUrls.filter(Boolean));
+  };
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    const uploadedUrls: string[] = [];
+    let completedUploads = 0;
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+        
+        const { data, error } = await supabase.storage
+          .from('products')
+          .upload(filePath, file);
+        
+        if (error) {
+          throw new Error(`Error uploading file: ${error.message}`);
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+        
+        if (urlData) {
+          uploadedUrls.push(urlData.publicUrl);
+        }
+        
+        completedUploads++;
+        setUploadProgress(Math.round((completedUploads / files.length) * 100));
+      }
+      
+      // Add the new images to any existing ones
+      const currentImages = form.getValues('images') || [];
+      form.setValue('images', [...currentImages, ...uploadedUrls]);
+      
+      toast({
+        title: 'Images uploaded',
+        description: `Successfully uploaded ${uploadedUrls.length} images.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Upload error',
+        description: error.message || 'Failed to upload images',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   return (
@@ -195,6 +271,27 @@ const AddProductForm = () => {
                 
                 <FormField
                   control={form.control}
+                  name="discount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Discount (%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="1" 
+                          min="0"
+                          max="100"
+                          placeholder="0" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
@@ -254,7 +351,21 @@ const AddProductForm = () => {
                     <FormItem>
                       <FormLabel>Material</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Wood, Metal, etc." {...field} />
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select material" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_MATERIALS.map((material) => (
+                              <SelectItem key={material} value={material}>
+                                {material}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,15 +389,82 @@ const AddProductForm = () => {
               
               <div className="space-y-4">
                 <div>
-                  <FormLabel htmlFor="images">Images URLs</FormLabel>
-                  <Input
-                    id="images"
-                    placeholder="Enter comma-separated image URLs"
-                    onChange={handleImagesChange}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter multiple URLs separated by commas
-                  </p>
+                  <FormLabel>Product Images</FormLabel>
+                  <div className="border border-input rounded-md p-4 space-y-4">
+                    <div>
+                      <label 
+                        htmlFor="file-upload" 
+                        className="flex items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/25 rounded-md cursor-pointer hover:bg-muted/50"
+                      >
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload size={24} className="text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Drag & drop or click to upload
+                          </span>
+                        </div>
+                        <input
+                          id="file-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileUpload}
+                          disabled={isUploading}
+                        />
+                      </label>
+                      
+                      {isUploading && (
+                        <div className="mt-2">
+                          <div className="w-full bg-muted h-2 rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className="bg-furniture-teal h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-center text-muted-foreground mt-1">
+                            Uploading... {uploadProgress}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-2">
+                      {form.getValues('images')?.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={url} 
+                            alt={`Product preview ${index + 1}`} 
+                            className="h-20 w-20 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              const images = [...form.getValues('images')];
+                              images.splice(index, 1);
+                              form.setValue('images', images);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Or enter image URLs directly:
+                      </p>
+                      <Input
+                        id="images"
+                        placeholder="Enter comma-separated image URLs"
+                        onChange={handleImagesChange}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -353,7 +531,7 @@ const AddProductForm = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={productMutation.isPending}
+                disabled={productMutation.isPending || isUploading}
               >
                 {productMutation.isPending ? (
                   <>
