@@ -19,6 +19,9 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import ProductsManagement from "./pages/admin/ProductsManagement";
 import CategoriesManagement from "./pages/admin/CategoriesManagement";
 import Overview from "./pages/admin/Overview";
+import AddProductForm from "./pages/admin/AddProductForm";
+import OrdersManagement from "./pages/admin/OrdersManagement";
+import UsersManagement from "./pages/admin/UsersManagement";
 
 const queryClient = new QueryClient();
 
@@ -50,11 +53,11 @@ const App = () => (
                   <Route path="/admin" element={<AdminDashboard />}>
                     <Route index element={<Overview />} />
                     <Route path="products" element={<ProductsManagement />} />
-                    <Route path="products/new" element={<div>Add Product Form (To Be Implemented)</div>} />
+                    <Route path="products/new" element={<AddProductForm />} />
                     <Route path="products/edit/:id" element={<div>Edit Product Form (To Be Implemented)</div>} />
-                    <Route path="orders" element={<div>Orders Management (To Be Implemented)</div>} />
+                    <Route path="orders" element={<OrdersManagement />} />
                     <Route path="categories" element={<CategoriesManagement />} />
-                    <Route path="users" element={<div>Users Management (To Be Implemented)</div>} />
+                    <Route path="users" element={<UsersManagement />} />
                   </Route>
                 </Route>
                 
