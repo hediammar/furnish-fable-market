@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Product } from '@/types/product';
 
 const productSchema = z.object({
   name: z.string().min(3, { message: 'Product name must be at least 3 characters' }),
@@ -31,7 +32,9 @@ const productSchema = z.object({
   new: z.boolean().default(false),
 });
 
-type ProductFormValues = z.infer<typeof productSchema>;
+// We make sure all values match the Product type without the 'id' field
+type ProductFormValues = Required<Pick<z.infer<typeof productSchema>, 'name' | 'description' | 'price' | 'category'>> & 
+  Partial<Omit<z.infer<typeof productSchema>, 'name' | 'description' | 'price' | 'category'>>;
 
 const AddProductForm = () => {
   const { toast } = useToast();
@@ -62,7 +65,23 @@ const AddProductForm = () => {
   });
   
   const productMutation = useMutation({
-    mutationFn: createProduct,
+    mutationFn: (data: ProductFormValues) => {
+      // Ensure all required fields are present for the Product type
+      const productData: Omit<Product, 'id'> = {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        images: data.images || [],
+        inStock: data.inStock ?? true,
+        stock: data.stock,
+        material: data.material,
+        dimensions: data.dimensions,
+        featured: data.featured,
+        new: data.new,
+      };
+      return createProduct(productData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
       toast({
@@ -265,7 +284,10 @@ const AddProductForm = () => {
                   <Input
                     id="images"
                     placeholder="Enter comma-separated image URLs"
-                    onChange={handleImagesChange}
+                    onChange={(e) => {
+                      const imageUrls = e.target.value.trim().split(/\s*,\s*/);
+                      form.setValue('images', imageUrls.filter(Boolean));
+                    }}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Enter multiple URLs separated by commas
