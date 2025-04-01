@@ -30,9 +30,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const lastRefreshTimeRef = useRef<number>(0);
   const initialLoadDoneRef = useRef<boolean>(false);
   const authChangeHandledRef = useRef<boolean>(false);
+  const profileFetchInProgressRef = useRef<boolean>(false);
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
+    if (profileFetchInProgressRef.current) {
+      console.log('Profile fetch already in progress, skipping');
+      return;
+    }
 
     const now = Date.now();
     // Increase the throttle time to prevent too frequent refreshes
@@ -42,8 +47,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     lastRefreshTimeRef.current = now;
+    profileFetchInProgressRef.current = true;
 
     try {
+      console.log('Fetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -52,6 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        profileFetchInProgressRef.current = false;
         return;
       }
 
@@ -59,14 +67,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setProfile(data);
       
-      const adminRole = data?.role === 'admin';
-      const adminFlag = data?.is_admin === true;
+      // Check both role and is_admin flag
+      const isAdminRole = data?.role === 'admin';
+      const isAdminFlag = data?.is_admin === true;
       
-      console.log('Admin checks:', { adminRole, adminFlag, role: data?.role, is_admin: data?.is_admin });
+      console.log('Admin checks:', { isAdminRole, isAdminFlag, role: data?.role, is_admin: data?.is_admin });
       
-      setIsAdmin(adminRole || adminFlag);
+      setIsAdmin(isAdminRole || isAdminFlag);
     } catch (error) {
       console.error('Error fetching profile:', error);
+    } finally {
+      profileFetchInProgressRef.current = false;
     }
   }, [user]);
 
@@ -137,6 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -162,6 +174,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         variant: 'destructive',
       });
       return Promise.reject(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

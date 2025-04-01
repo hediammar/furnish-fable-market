@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +9,21 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Try to refresh the profile once when the component loads if it's null
+  useEffect(() => {
+    if (user && !profile) {
+      const timeoutId = setTimeout(() => {
+        refreshProfile();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user, profile, refreshProfile]);
 
   const handleSignOut = async () => {
     setIsLoading(true);
@@ -35,7 +46,7 @@ const Profile = () => {
     });
   };
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <div className="container mx-auto py-12 px-4">
         <div className="text-center">Please sign in to view your profile.</div>
@@ -61,18 +72,24 @@ const Profile = () => {
           <CardContent className="space-y-4">
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-              <p className="text-base">{profile.email}</p>
+              <p className="text-base">{profile?.email || user.email}</p>
             </div>
             
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Account Type</h3>
-              <p className="text-base">{profile.is_admin ? 'Administrator' : 'Customer'}</p>
+              <p className="text-base">{profile?.is_admin || profile?.role === 'admin' ? 'Administrator' : 'Customer'}</p>
             </div>
             
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Member Since</h3>
-              <p className="text-base">{formatDate(profile.created_at)}</p>
+              <p className="text-base">{formatDate(profile?.created_at)}</p>
             </div>
+            
+            {!profile && (
+              <div className="p-4 bg-amber-50 text-amber-800 rounded-md">
+                <p>Profile data is still loading...</p>
+              </div>
+            )}
           </CardContent>
           <Separator />
           <CardFooter className="flex justify-between pt-6">
