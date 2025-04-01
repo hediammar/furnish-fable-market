@@ -32,9 +32,7 @@ const productSchema = z.object({
   new: z.boolean().default(false),
 });
 
-// We make sure all values match the Product type without the 'id' field
-type ProductFormValues = Required<Pick<z.infer<typeof productSchema>, 'name' | 'description' | 'price' | 'category'>> & 
-  Partial<Omit<z.infer<typeof productSchema>, 'name' | 'description' | 'price' | 'category'>>;
+type ProductFormValues = z.infer<typeof productSchema>;
 
 const AddProductForm = () => {
   const { toast } = useToast();
@@ -284,10 +282,7 @@ const AddProductForm = () => {
                   <Input
                     id="images"
                     placeholder="Enter comma-separated image URLs"
-                    onChange={(e) => {
-                      const imageUrls = e.target.value.trim().split(/\s*,\s*/);
-                      form.setValue('images', imageUrls.filter(Boolean));
-                    }}
+                    onChange={handleImagesChange}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Enter multiple URLs separated by commas
