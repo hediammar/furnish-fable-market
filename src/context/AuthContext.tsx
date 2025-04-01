@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,12 +28,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const profileRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastRefreshTimeRef = useRef<number>(0);
+  const initialLoadDoneRef = useRef<boolean>(false);
+  const authChangeHandledRef = useRef<boolean>(false);
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
 
     const now = Date.now();
-    if (now - lastRefreshTimeRef.current < 2000) {
+    // Increase the throttle time to prevent too frequent refreshes
+    if (now - lastRefreshTimeRef.current < 5000) { // 5 seconds throttle
       console.log('Skipping profile refresh - too soon since last refresh');
       return;
     }
@@ -51,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      console.log('Profile data fetched:', data); // Debug log
+      console.log('Profile data fetched:', data);
       
       setProfile(data);
       
@@ -68,11 +72,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initialize = async () => {
+      if (initialLoadDoneRef.current) {
+        return; // Prevent multiple initializations
+      }
+      
       setIsLoading(true);
       
+      // Get initial session first
+      const { data } = await supabase.auth.getSession();
+      console.log('Initial session check:', data.session?.user?.id);
+      
+      // Only set the session and user if we haven't already from an auth change event
+      if (!authChangeHandledRef.current) {
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        
+        if (data.session?.user) {
+          // Use setTimeout to allow React to finish rendering before fetching profile
+          setTimeout(() => {
+            refreshProfile();
+          }, 100);
+        }
+      }
+      
+      // After initial session check, set up the auth change listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, newSession) => {
           console.log('Auth state changed:', event, newSession?.user?.id);
+          authChangeHandledRef.current = true;
           
           setSession(newSession);
           setUser(newSession?.user ?? null);
@@ -80,31 +107,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (event === 'SIGNED_OUT') {
             setProfile(null);
             setIsAdmin(false);
-          }
-          
-          if (newSession?.user) {
+          } else if (newSession?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+            // Clear any pending profile refresh
             if (profileRefreshTimeoutRef.current) {
               clearTimeout(profileRefreshTimeoutRef.current);
             }
             
+            // Schedule profile refresh, but with a delay to avoid rapid successive calls
             profileRefreshTimeoutRef.current = setTimeout(() => {
               refreshProfile();
-            }, 300);
+            }, 500);
           }
         }
       );
       
-      const { data } = await supabase.auth.getSession();
-      console.log('Initial session check:', data.session?.user?.id);
-      
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      
-      if (data.session?.user) {
-        await refreshProfile();
-      }
-      
       setIsLoading(false);
+      initialLoadDoneRef.current = true;
       
       return () => {
         subscription.unsubscribe();
