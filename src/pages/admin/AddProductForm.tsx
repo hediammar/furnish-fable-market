@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet-async';
-import { AlertCircle, ArrowLeft, Image, Loader2, Save, Upload } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, Save, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,11 +131,6 @@ const AddProductForm = () => {
     productMutation.mutate(values);
   };
   
-  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const imageUrls = e.target.value.trim().split(/\s*,\s*/);
-    form.setValue('images', imageUrls.filter(Boolean));
-  };
-  
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -151,16 +146,22 @@ const AddProductForm = () => {
         const file = files[i];
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+        const filePath = `${fileName}`;
         
+        // Upload the file to Supabase Storage
         const { data, error } = await supabase.storage
           .from('products')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
         
         if (error) {
+          console.error('Error uploading file:', error);
           throw new Error(`Error uploading file: ${error.message}`);
         }
         
+        // Get the public URL for the uploaded file
         const { data: urlData } = supabase.storage
           .from('products')
           .getPublicUrl(filePath);
@@ -182,6 +183,7 @@ const AddProductForm = () => {
         description: `Successfully uploaded ${uploadedUrls.length} images.`,
       });
     } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: 'Upload error',
         description: error.message || 'Failed to upload images',
@@ -435,6 +437,10 @@ const AddProductForm = () => {
                             src={url} 
                             alt={`Product preview ${index + 1}`} 
                             className="h-20 w-20 object-cover rounded-md"
+                            onError={(e) => {
+                              console.log('Image failed to load:', url);
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
                           />
                           <button
                             type="button"
@@ -451,18 +457,6 @@ const AddProductForm = () => {
                           </button>
                         </div>
                       ))}
-                    </div>
-                    
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Or enter image URLs directly:
-                      </p>
-                      <Input
-                        id="images"
-                        placeholder="Enter comma-separated image URLs"
-                        onChange={handleImagesChange}
-                        className="mt-1"
-                      />
                     </div>
                   </div>
                 </div>
