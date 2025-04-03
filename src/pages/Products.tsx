@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { fetchProducts, fetchCategories } from '@/services/productService';
+import { fetchProducts } from '@/services/productService';
+import { fetchCategories } from '@/services/categoryService';
 import ProductCard from '@/components/product/ProductCard';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,6 @@ const ProductsGrid = ({ products, isLoading }: { products: Product[], isLoading:
   );
 };
 
-// Additional materials and colors for filters
 const materials = ['Wood', 'Leather', 'Fabric', 'Metal', 'Glass', 'Marble'];
 const colors = ['Black', 'White', 'Brown', 'Gray', 'Blue', 'Green', 'Red', 'Natural'];
 
@@ -67,7 +66,6 @@ const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   
-  // Get initial filter values from URL params
   const initialCategory = searchParams.get('category') || 'all';
   const initialMinPrice = Number(searchParams.get('minPrice')) || 0;
   const initialMaxPrice = Number(searchParams.get('maxPrice')) || 5000;
@@ -76,7 +74,6 @@ const Products = () => {
   const initialSort = searchParams.get('sort') || 'newest';
   const initialSearch = searchParams.get('search') || '';
   
-  // Local state for filters
   const [category, setCategory] = useState(initialCategory);
   const [priceRange, setPriceRange] = useState<[number, number]>([initialMinPrice, initialMaxPrice]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(initialMaterials);
@@ -85,13 +82,11 @@ const Products = () => {
   const [search, setSearch] = useState(initialSearch);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
-  // Fetch categories
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
   
-  // Fetch products with filters
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', category, priceRange, selectedMaterials, selectedColors, sort, search],
     queryFn: () => fetchProducts({
@@ -105,7 +100,6 @@ const Products = () => {
     }),
   });
   
-  // Update URL params when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     if (category !== 'all') params.set('category', category);
@@ -118,7 +112,6 @@ const Products = () => {
     setSearchParams(params);
   }, [category, priceRange, selectedMaterials, selectedColors, sort, search, setSearchParams]);
   
-  // Function to clear all filters
   const clearFilters = () => {
     setCategory('all');
     setPriceRange([0, 5000]);
@@ -129,7 +122,6 @@ const Products = () => {
     setSearchParams(new URLSearchParams());
   };
   
-  // Check if any filter is active
   const isFilterActive = 
     category !== 'all' ||
     priceRange[0] > 0 ||
@@ -179,7 +171,7 @@ const Products = () => {
             <Label htmlFor="category-all">All Categories</Label>
           </div>
           
-          {categories.map((cat: any) => (
+          {categories && Array.isArray(categories) && categories.map((cat: any) => (
             <div key={cat.id} className="flex items-center space-x-2">
               <RadioGroupItem value={cat.name} id={`category-${cat.id}`} />
               <Label htmlFor={`category-${cat.id}`}>{cat.name}</Label>

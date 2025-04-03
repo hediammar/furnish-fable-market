@@ -1,17 +1,12 @@
-
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createProduct, fetchCategories } from '@/services/productService';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { createProduct } from '@/services/productService';
+import { fetchCategories } from '@/services/categoryService';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle, ArrowLeft, Loader2, Save, Upload } from 'lucide-react';
@@ -19,7 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
 
-// Available materials for the dropdown
 const AVAILABLE_MATERIALS = [
   'Wood',
   'Metal',
@@ -57,7 +51,6 @@ const AddProductForm = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   
-  // Fetch categories
   const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => fetchCategories(),
@@ -83,7 +76,6 @@ const AddProductForm = () => {
   
   const productMutation = useMutation({
     mutationFn: (data: ProductFormValues) => {
-      // Ensure all required fields are present for the Product type
       const productData: Omit<Product, 'id'> = {
         name: data.name,
         description: data.description,
@@ -118,12 +110,10 @@ const AddProductForm = () => {
   });
   
   const onSubmit = (values: ProductFormValues) => {
-    // Ensure images is an array
     if (!values.images || !Array.isArray(values.images)) {
       values.images = [];
     }
     
-    // Add a placeholder image if no images are provided
     if (values.images.length === 0) {
       values.images = ['/placeholder.svg'];
     }
@@ -148,7 +138,6 @@ const AddProductForm = () => {
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         const filePath = `${fileName}`;
         
-        // Upload the file to Supabase Storage
         const { data, error } = await supabase.storage
           .from('products')
           .upload(filePath, file, {
@@ -161,7 +150,6 @@ const AddProductForm = () => {
           throw new Error(`Error uploading file: ${error.message}`);
         }
         
-        // Get the public URL for the uploaded file
         const { data: urlData } = supabase.storage
           .from('products')
           .getPublicUrl(filePath);
@@ -174,7 +162,6 @@ const AddProductForm = () => {
         setUploadProgress(Math.round((completedUploads / files.length) * 100));
       }
       
-      // Add the new images to any existing ones
       const currentImages = form.getValues('images') || [];
       form.setValue('images', [...currentImages, ...uploadedUrls]);
       
@@ -214,7 +201,6 @@ const AddProductForm = () => {
       <div className="bg-white rounded-md shadow-sm p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <FormField
@@ -343,7 +329,6 @@ const AddProductForm = () => {
               </div>
             </div>
             
-            {/* Additional Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <FormField
@@ -463,7 +448,6 @@ const AddProductForm = () => {
               </div>
             </div>
             
-            {/* Product Status */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -514,7 +498,6 @@ const AddProductForm = () => {
               />
             </div>
             
-            {/* Submit Button */}
             <div className="pt-4 flex justify-end space-x-2">
               <Button
                 type="button"

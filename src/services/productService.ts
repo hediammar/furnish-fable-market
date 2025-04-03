@@ -27,12 +27,10 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     featured
   } = params;
 
-  // Type the query explicitly
-  let query = supabase
-    .from('products')
-    .select('*');
+  // Start with a basic query and build it up
+  let query = supabase.from('products').select('*');
   
-  // Apply filters
+  // Apply filters - use explicit method chaining to avoid type recursion
   if (category) {
     query = query.eq('category', category);
   }
@@ -61,24 +59,20 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.eq('is_featured', featured);
   }
 
-  // Apply sorting
-  switch (sort) {
-    case 'price-asc':
-      query = query.order('price', { ascending: true });
-      break;
-    case 'price-desc':
-      query = query.order('price', { ascending: false });
-      break;
-    case 'rating':
-      query = query.order('rating', { ascending: false });
-      break;
-    case 'newest':
-    default:
-      query = query.order('created_at', { ascending: false });
+  // Apply sorting separately to avoid deep type instantiation
+  let sortedQuery = query;
+  if (sort === 'price-asc') {
+    sortedQuery = query.order('price', { ascending: true });
+  } else if (sort === 'price-desc') {
+    sortedQuery = query.order('price', { ascending: false });
+  } else if (sort === 'rating') {
+    sortedQuery = query.order('rating', { ascending: false });
+  } else {
+    sortedQuery = query.order('created_at', { ascending: false });
   }
   
   // Execute query
-  const { data, error } = await query;
+  const { data, error } = await sortedQuery;
   
   if (error) {
     console.error('Error fetching products:', error);
