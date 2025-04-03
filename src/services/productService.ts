@@ -48,10 +48,12 @@ export const fetchProducts = async ({
   search?: string;
   featured?: boolean;
 } = {}) => {
+  // Use explicit type annotation to avoid excessive type inference
   let query = supabase
     .from('products')
     .select('*');
   
+  // Apply filters
   if (category) {
     query = query.eq('category', category);
   }
@@ -69,7 +71,6 @@ export const fetchProducts = async ({
   }
   
   if (colors && colors.length > 0) {
-    // Assuming you have a 'colors' column in your database
     query = query.in('color', colors);
   }
   
@@ -97,6 +98,7 @@ export const fetchProducts = async ({
       query = query.order('created_at', { ascending: false });
   }
   
+  // Execute query
   const { data, error } = await query;
   
   if (error) {
@@ -104,7 +106,8 @@ export const fetchProducts = async ({
     throw error;
   }
   
-  return data.map(mapDatabaseProductToAppProduct) as Product[];
+  // Map database products to our app's Product type
+  return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
 export const fetchProductById = async (id: string): Promise<Product | null> => {
@@ -119,7 +122,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     throw error;
   }
   
-  return mapDatabaseProductToAppProduct(data);
+  return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
 export const fetchCategories = async (): Promise<Category[]> => {
@@ -180,7 +183,7 @@ export const fetchProductsByCategory = async (categoryId: string, sort = 'newest
     throw error;
   }
   
-  return data.map(mapDatabaseProductToAppProduct) as Product[];
+  return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
 export const fetchRelatedProducts = async (productId: string, category: string) => {
@@ -196,7 +199,7 @@ export const fetchRelatedProducts = async (productId: string, category: string) 
     throw error;
   }
   
-  return data.map(mapDatabaseProductToAppProduct) as Product[];
+  return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
 // Add the missing createProduct function
@@ -227,7 +230,7 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
     throw error;
   }
 
-  return mapDatabaseProductToAppProduct(data);
+  return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
 // Add the missing deleteProduct function
