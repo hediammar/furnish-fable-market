@@ -1,9 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchCategories } from '@/services/categoryService';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,9 +26,8 @@ type FormValues = z.infer<typeof formSchema>;
 const CategoriesManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   
-  // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,7 +36,6 @@ const CategoriesManagement = () => {
     },
   });
   
-  // Reset form when editing category changes
   React.useEffect(() => {
     if (editingCategory) {
       form.reset({
@@ -52,24 +50,13 @@ const CategoriesManagement = () => {
     }
   }, [editingCategory, form]);
   
-  // Query to fetch categories
   const { data: categories, isLoading, isError } = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-        
-      if (error) throw error;
-      return data as Category[];
-    },
+    queryFn: fetchCategories,
   });
   
-  // Mutation to add a new category
   const addMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // Make sure name is required in the values
       if (!values.name) {
         throw new Error('Category name is required');
       }
@@ -102,7 +89,6 @@ const CategoriesManagement = () => {
     },
   });
   
-  // Mutation to update a category
   const updateMutation = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: FormValues }) => {
       const { data, error } = await supabase
@@ -132,7 +118,6 @@ const CategoriesManagement = () => {
     },
   });
   
-  // Mutation to delete a category
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -158,7 +143,6 @@ const CategoriesManagement = () => {
     },
   });
   
-  // Handle form submission
   const onSubmit = (values: FormValues) => {
     if (editingCategory) {
       updateMutation.mutate({ id: editingCategory.id, values });
@@ -167,19 +151,16 @@ const CategoriesManagement = () => {
     }
   };
   
-  // Handle edit button click
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
   };
   
-  // Handle delete button click
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       deleteMutation.mutate(id);
     }
   };
   
-  // Handle cancel edit
   const handleCancelEdit = () => {
     setEditingCategory(null);
     form.reset();

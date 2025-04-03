@@ -1,44 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
+import { mapDatabaseProductToAppProduct } from './productMappers';
 
-export interface Category {
-  id: string;
-  created_at: string | null;
-  name: string;
-  description?: string;
-  image?: string;
-}
-
-// Map database product to our app's Product type
-const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
-  return {
-    id: dbProduct.id,
-    name: dbProduct.name,
-    description: dbProduct.description || '',
-    price: dbProduct.price,
-    images: dbProduct.images || [dbProduct.image].filter(Boolean),
-    category: dbProduct.category || '',
-    material: dbProduct.material,
-    dimensions: dbProduct.dimensions,
-    inStock: dbProduct.stock > 0,
-    stock: dbProduct.stock,
-    featured: dbProduct.is_featured,
-    new: dbProduct.is_new,
-    discount: dbProduct.discount
-  };
-};
-
-export const fetchProducts = async ({ 
-  category, 
-  minPrice, 
-  maxPrice, 
-  materials, 
-  colors, 
-  sort,
-  search,
-  featured
-}: {
+// Define filter parameters type to avoid excessive type inference
+export interface ProductFilterParams {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -47,8 +13,21 @@ export const fetchProducts = async ({
   sort?: string;
   search?: string;
   featured?: boolean;
-} = {}) => {
-  // Use explicit type annotation to avoid excessive type inference
+}
+
+export const fetchProducts = async (params: ProductFilterParams = {}): Promise<Product[]> => {
+  const { 
+    category, 
+    minPrice, 
+    maxPrice, 
+    materials, 
+    colors, 
+    sort,
+    search,
+    featured
+  } = params;
+
+  // Type the query explicitly
   let query = supabase
     .from('products')
     .select('*');
@@ -125,68 +104,11 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
-export const fetchCategories = async (): Promise<Category[]> => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name', { ascending: true });
-  
-  if (error) {
-    console.error('Error fetching categories:', error);
-    throw error;
-  }
-  
-  return data as Category[];
+export const fetchProductsByCategory = async (categoryId: string, sort = 'newest'): Promise<Product[]> => {
+  return fetchProducts({ category: categoryId, sort });
 };
 
-export const fetchCategoryById = async (id: string) => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) {
-    console.error('Error fetching category:', error);
-    throw error;
-  }
-  
-  return data;
-};
-
-export const fetchProductsByCategory = async (categoryId: string, sort = 'newest') => {
-  let query = supabase
-    .from('products')
-    .select('*')
-    .eq('category', categoryId);
-  
-  // Apply sorting
-  switch (sort) {
-    case 'price-asc':
-      query = query.order('price', { ascending: true });
-      break;
-    case 'price-desc':
-      query = query.order('price', { ascending: false });
-      break;
-    case 'rating':
-      query = query.order('rating', { ascending: false });
-      break;
-    case 'newest':
-    default:
-      query = query.order('created_at', { ascending: false });
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Error fetching products by category:', error);
-    throw error;
-  }
-  
-  return (data || []).map(mapDatabaseProductToAppProduct);
-};
-
-export const fetchRelatedProducts = async (productId: string, category: string) => {
+export const fetchRelatedProducts = async (productId: string, category: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -202,8 +124,8 @@ export const fetchRelatedProducts = async (productId: string, category: string) 
   return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
-// Add the missing createProduct function
-export const createProduct = async (product: Omit<Product, 'id'>) => {
+// Create product function
+export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   // Convert from our app's Product type to database format
   const dbProduct = {
     name: product.name,
@@ -233,8 +155,8 @@ export const createProduct = async (product: Omit<Product, 'id'>) => {
   return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
-// Add the missing deleteProduct function
-export const deleteProduct = async (id: string) => {
+// Delete product function
+export const deleteProduct = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
     .delete()
