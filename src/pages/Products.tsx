@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Product } from '@/types/product';
+import { Category } from '@/types/category';
 import { Filter, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -171,7 +173,7 @@ const Products = () => {
             <Label htmlFor="category-all">All Categories</Label>
           </div>
           
-          {categories && Array.isArray(categories) && categories.map((cat: any) => (
+          {categories && Array.isArray(categories) && categories.map((cat: Category) => (
             <div key={cat.id} className="flex items-center space-x-2">
               <RadioGroupItem value={cat.name} id={`category-${cat.id}`} />
               <Label htmlFor={`category-${cat.id}`}>{cat.name}</Label>

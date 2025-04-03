@@ -27,10 +27,10 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     featured
   } = params;
 
-  // Start with a basic query and build it up
+  // Start with a basic query - split into parts to avoid type recursion
   let query = supabase.from('products').select('*');
   
-  // Apply filters - use explicit method chaining to avoid type recursion
+  // Apply filters one by one
   if (category) {
     query = query.eq('category', category);
   }
@@ -59,17 +59,8 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.eq('is_featured', featured);
   }
 
-  // Apply sorting separately to avoid deep type instantiation
-  let sortedQuery = query;
-  if (sort === 'price-asc') {
-    sortedQuery = query.order('price', { ascending: true });
-  } else if (sort === 'price-desc') {
-    sortedQuery = query.order('price', { ascending: false });
-  } else if (sort === 'rating') {
-    sortedQuery = query.order('rating', { ascending: false });
-  } else {
-    sortedQuery = query.order('created_at', { ascending: false });
-  }
+  // Create separate query for sorting to avoid deep type recursion
+  const sortedQuery = applySorting(query, sort);
   
   // Execute query
   const { data, error } = await sortedQuery;
@@ -81,6 +72,19 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   
   // Map database products to our app's Product type
   return (data || []).map(mapDatabaseProductToAppProduct);
+};
+
+// Separate function to apply sorting
+const applySorting = (query: any, sort?: string) => {
+  if (sort === 'price-asc') {
+    return query.order('price', { ascending: true });
+  } else if (sort === 'price-desc') {
+    return query.order('price', { ascending: false });
+  } else if (sort === 'rating') {
+    return query.order('rating', { ascending: false });
+  } else {
+    return query.order('created_at', { ascending: false });
+  }
 };
 
 export const fetchProductById = async (id: string): Promise<Product | null> => {

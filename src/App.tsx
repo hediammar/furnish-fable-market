@@ -28,6 +28,9 @@ import Overview from "./pages/admin/Overview";
 import AddProductForm from "./pages/admin/AddProductForm";
 import OrdersManagement from "./pages/admin/OrdersManagement";
 import UsersManagement from "./pages/admin/UsersManagement";
+import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import NewsletterBuilder from "./pages/admin/NewsletterBuilder";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +54,8 @@ const App = () => (
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/search" element={<Search />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/checkout/success" element={<CheckoutSuccess />} />
                 
                 {/* Protected User Routes */}
                 <Route element={<ProtectedRoute />}>
@@ -68,6 +73,7 @@ const App = () => (
                     <Route path="orders" element={<OrdersManagement />} />
                     <Route path="categories" element={<CategoriesManagement />} />
                     <Route path="users" element={<UsersManagement />} />
+                    <Route path="newsletter" element={<NewsletterBuilder />} />
                   </Route>
                 </Route>
                 

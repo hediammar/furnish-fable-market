@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import Hero from '@/components/home/Hero';
@@ -11,13 +10,7 @@ import ReviewsCarousel from '@/components/home/ReviewsCarousel';
 import NewsletterSection from '@/components/home/NewsletterSection';
 import CategoryPreview from '@/components/home/CategoryPreview';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Category {
-  id: string;
-  name: string;
-  productCount: number;
-  image: string;
-}
+import { Category } from '@/types/category';
 
 const Index: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -30,9 +23,8 @@ const Index: React.FC = () => {
   useEffect(() => {
     const loadFeaturedProducts = async () => {
       try {
-        // Use featured parameter with boolean value
         const products = await fetchProducts({ featured: true });
-        setFeaturedProducts(products.slice(0, 6)); // Get only 6 featured products
+        setFeaturedProducts(products.slice(0, 6));
       } catch (error) {
         console.error('Error fetching featured products:', error);
       } finally {
@@ -44,21 +36,18 @@ const Index: React.FC = () => {
       try {
         const categories = await fetchCategories();
         
-        // For now, we'll use the first 4 categories with placeholder images
-        // In a real app, you would fetch product counts and proper images
         const categoryImages = [
-          'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80', // Living Room
-          'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80', // Bedroom
-          'https://images.unsplash.com/photo-1532372576444-dda954194ad0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80', // Dining
-          'https://images.unsplash.com/photo-1486946255434-2466348c2166?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80', // Office
+          'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+          'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+          'https://images.unsplash.com/photo-1532372576444-dda954194ad0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+          'https://images.unsplash.com/photo-1486946255434-2466348c2166?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
         ];
         
-        // Transform categories to include counts and images
         const topCats = categories.slice(0, 4).map((category, index) => ({
           id: category.id,
           name: category.name,
-          productCount: Math.floor(Math.random() * 20) + 5, // Random count for demo
-          image: categoryImages[index]
+          productCount: Math.floor(Math.random() * 20) + 5,
+          image: categoryImages[index % categoryImages.length]
         }));
         
         setTopCategories(topCats);
@@ -75,10 +64,8 @@ const Index: React.FC = () => {
 
   return (
     <main>
-      {/* 1. Hero Section */}
       <Hero />
       
-      {/* 2. Shop by Category Section */}
       <section className="py-16">
         <div className="container-custom">
           <div className="text-center mb-12">
@@ -118,7 +105,6 @@ const Index: React.FC = () => {
         </div>
       </section>
       
-      {/* 3. Featured Products Section */}
       {loading.products ? (
         <section className="py-16 bg-muted">
           <div className="container-custom">
@@ -143,10 +129,8 @@ const Index: React.FC = () => {
         <FeaturedProducts products={featuredProducts} />
       )}
       
-      {/* 4. Customer Reviews Section */}
       <ReviewsCarousel />
       
-      {/* 5. Newsletter Section */}
       <NewsletterSection />
     </main>
   );
