@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ProductDetail from '@/components/product/ProductDetail';
+import ProductRecommendations from '@/components/product/ProductRecommendations';
 import { Product } from '@/types/product';
 import { ArrowLeft } from 'lucide-react';
 import { fetchProductById } from '@/services/productService';
@@ -61,7 +61,7 @@ const ProductPage: React.FC = () => {
   // Breadcrumb categories
   const categories = [
     { name: 'Home', path: '/' },
-    { name: product.category, path: `/category/${product.category.toLowerCase().replace(' ', '-')}` },
+    { name: product.category, path: `/category/${product.category}` },
     { name: product.name, path: '#' }
   ];
 
@@ -89,6 +89,9 @@ const ProductPage: React.FC = () => {
       
       {/* Product Detail */}
       <ProductDetail product={product} />
+      
+      {/* Product Recommendations */}
+      <ProductRecommendations productId={product.id} category={product.category} />
       
       {/* Back to products link */}
       <div className="container-custom py-8">

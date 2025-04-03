@@ -25,7 +25,7 @@ const CategoryPreview: React.FC<CategoryPreviewProps> = ({ category }) => {
           <h3 className="text-white font-medium text-xl mb-1">{category.name}</h3>
           <p className="text-white/80 text-sm mb-3">{category.productCount} products</p>
           <Link 
-            to={`/category/${category.name.toLowerCase().replace(' ', '-')}`} 
+            to={`/category/${category.id}`} 
             className="text-white hover:text-furniture-taupe inline-flex items-center text-sm"
           >
             Shop Collection <ArrowRight size={14} className="ml-1" />

@@ -7,10 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index";
 import ProductPage from "./pages/ProductPage";
+import CategoryPage from "./pages/CategoryPage";
 import Products from "./pages/Products";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import OrdersPage from "./pages/OrdersPage";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import About from "./pages/About";
@@ -44,6 +46,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/category/:id" element={<CategoryPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
@@ -52,7 +55,7 @@ const App = () => (
                 {/* Protected User Routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/profile" element={<Profile />} />
-                  <Route path="/orders" element={<Profile />} />
+                  <Route path="/orders" element={<OrdersPage />} />
                 </Route>
                 
                 {/* Protected Admin Routes */}

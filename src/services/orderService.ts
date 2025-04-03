@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Order {
@@ -90,4 +89,43 @@ export const updateOrderStatus = async (id: string, status: string) => {
   }
   
   return data as Order;
+};
+
+export const fetchOrdersByUserId = async (userId: string) => {
+  const { data: orders, error: ordersError } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (ordersError) {
+    console.error('Error fetching user orders:', ordersError);
+    throw ordersError;
+  }
+  
+  // For each order, fetch its items
+  const ordersWithItems = await Promise.all(orders.map(async (order) => {
+    const { data: items, error: itemsError } = await supabase
+      .from('order_items')
+      .select(`
+        *,
+        product:product_id (
+          name,
+          images
+        )
+      `)
+      .eq('order_id', order.id);
+    
+    if (itemsError) {
+      console.error(`Error fetching items for order ${order.id}:`, itemsError);
+      return order;
+    }
+    
+    return {
+      ...order,
+      items,
+    };
+  }));
+  
+  return ordersWithItems;
 };
