@@ -29,6 +29,7 @@ const Index: React.FC = () => {
   useEffect(() => {
     const loadFeaturedProducts = async () => {
       try {
+        // Use featured parameter with boolean value
         const products = await fetchProducts({ featured: true });
         setFeaturedProducts(products.slice(0, 6)); // Get only 6 featured products
       } catch (error) {

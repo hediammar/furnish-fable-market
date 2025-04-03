@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Order {
@@ -91,7 +92,7 @@ export const updateOrderStatus = async (id: string, status: string) => {
   return data as Order;
 };
 
-export const fetchOrdersByUserId = async (userId: string) => {
+export const fetchOrdersByUserId = async (userId: string): Promise<Order[]> => {
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
     .select('*')

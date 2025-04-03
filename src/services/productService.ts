@@ -1,19 +1,6 @@
-import { supabase } from '@/integrations/supabase/client';
 
-export interface Product {
-  id: string;
-  created_at: string | null;
-  name: string;
-  description: string;
-  price: number;
-  images: string[];
-  category: string;
-  material?: string;
-  dimensions?: string;
-  inStock: boolean;
-  discount?: number;
-  rating?: number;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Product } from '@/types/product';
 
 export interface Category {
   id: string;
@@ -23,7 +10,35 @@ export interface Category {
   image?: string;
 }
 
-export const fetchProducts = async ({ category, minPrice, maxPrice, materials, colors, sort, search }: {
+// Map database product to our app's Product type
+const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: dbProduct.price,
+    images: dbProduct.images || [dbProduct.image].filter(Boolean),
+    category: dbProduct.category || '',
+    material: dbProduct.material,
+    dimensions: dbProduct.dimensions,
+    inStock: dbProduct.stock > 0,
+    stock: dbProduct.stock,
+    featured: dbProduct.is_featured,
+    new: dbProduct.is_new,
+    discount: dbProduct.discount
+  };
+};
+
+export const fetchProducts = async ({ 
+  category, 
+  minPrice, 
+  maxPrice, 
+  materials, 
+  colors, 
+  sort,
+  search,
+  featured
+}: {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -31,6 +46,7 @@ export const fetchProducts = async ({ category, minPrice, maxPrice, materials, c
   colors?: string[];
   sort?: string;
   search?: string;
+  featured?: boolean;
 } = {}) => {
   let query = supabase
     .from('products')
@@ -40,25 +56,29 @@ export const fetchProducts = async ({ category, minPrice, maxPrice, materials, c
     query = query.eq('category', category);
   }
   
-  if (minPrice) {
+  if (minPrice !== undefined) {
     query = query.gte('price', minPrice);
   }
   
-  if (maxPrice) {
+  if (maxPrice !== undefined) {
     query = query.lte('price', maxPrice);
   }
   
-  if (materials) {
+  if (materials && materials.length > 0) {
     query = query.in('material', materials);
   }
   
-  if (colors) {
+  if (colors && colors.length > 0) {
     // Assuming you have a 'colors' column in your database
     query = query.in('color', colors);
   }
   
   if (search) {
     query = query.ilike('name', `%${search}%`);
+  }
+  
+  if (featured !== undefined) {
+    query = query.eq('is_featured', featured);
   }
 
   // Apply sorting
@@ -84,7 +104,7 @@ export const fetchProducts = async ({ category, minPrice, maxPrice, materials, c
     throw error;
   }
   
-  return data as Product[];
+  return data.map(mapDatabaseProductToAppProduct) as Product[];
 };
 
 export const fetchProductById = async (id: string): Promise<Product | null> => {
@@ -99,7 +119,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     throw error;
   }
   
-  return data as Product;
+  return mapDatabaseProductToAppProduct(data);
 };
 
 export const fetchCategories = async (): Promise<Category[]> => {
@@ -160,7 +180,7 @@ export const fetchProductsByCategory = async (categoryId: string, sort = 'newest
     throw error;
   }
   
-  return data;
+  return data.map(mapDatabaseProductToAppProduct) as Product[];
 };
 
 export const fetchRelatedProducts = async (productId: string, category: string) => {
@@ -176,5 +196,49 @@ export const fetchRelatedProducts = async (productId: string, category: string) 
     throw error;
   }
   
-  return data;
+  return data.map(mapDatabaseProductToAppProduct) as Product[];
+};
+
+// Add the missing createProduct function
+export const createProduct = async (product: Omit<Product, 'id'>) => {
+  // Convert from our app's Product type to database format
+  const dbProduct = {
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    images: product.images,
+    category: product.category,
+    material: product.material,
+    dimensions: product.dimensions,
+    stock: product.stock || 0,
+    is_featured: product.featured || false,
+    is_new: product.new || false,
+    discount: product.discount || null
+  };
+
+  const { data, error } = await supabase
+    .from('products')
+    .insert(dbProduct)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
+
+  return mapDatabaseProductToAppProduct(data);
+};
+
+// Add the missing deleteProduct function
+export const deleteProduct = async (id: string) => {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting product:', error);
+    throw error;
+  }
 };
