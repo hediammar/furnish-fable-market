@@ -1,37 +1,62 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import ProductDetail from '@/components/product/ProductDetail';
 import { Product } from '@/types/product';
 import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-// Mock data for a single product
-const productData: Product = {
-  id: '1',
-  name: 'Milan Leather Sofa',
-  description: 'A luxurious Italian leather sofa with clean lines and timeless design. Perfect for modern living spaces. The Milan Leather Sofa features down-filled cushions for exceptional comfort and a kiln-dried hardwood frame for durability and stability. The rich, full-grain leather develops a beautiful patina over time, making each piece unique.',
-  price: 1899.99,
-  discount: 15, // 15% discount
-  images: [
-    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    'https://images.unsplash.com/photo-1524758834226-5cc762c8c73d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-  ],
-  category: 'Living Room',
-  material: 'Italian Leather, Solid Oak',
-  dimensions: 'W: 220cm × H: 85cm × D: 95cm',
-  inStock: true,
-  featured: true
-};
+import { fetchProductById } from '@/services/productService';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  // In a real app, you would fetch the product data based on the ID
-  // For now, we'll just use our mock data
-  const product = productData;
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const productData = await fetchProductById(id);
+        setProduct(productData);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load product details. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadProduct();
+  }, [id, toast]);
+  
+  if (loading) {
+    return <ProductSkeleton />;
+  }
+  
+  if (!product) {
+    return (
+      <div className="container-custom py-16 text-center">
+        <h2 className="text-2xl font-medium mb-4">Product Not Found</h2>
+        <p className="text-muted-foreground mb-8">
+          The product you're looking for doesn't exist or has been removed.
+        </p>
+        <Link 
+          to="/products" 
+          className="inline-flex items-center text-furniture-brown hover:text-furniture-teal"
+        >
+          <ArrowLeft size={16} className="mr-2" /> Back to all products
+        </Link>
+      </div>
+    );
+  }
   
   // Breadcrumb categories
   const categories = [
@@ -75,6 +100,34 @@ const ProductPage: React.FC = () => {
         </Link>
       </div>
     </main>
+  );
+};
+
+const ProductSkeleton: React.FC = () => {
+  return (
+    <div className="container-custom py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-4">
+          <Skeleton className="w-full h-[500px] rounded-lg" />
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="w-full h-24 rounded" />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-6">
+          <Skeleton className="w-3/4 h-10" />
+          <Skeleton className="w-1/2 h-6" />
+          <Skeleton className="w-1/3 h-8" />
+          <Skeleton className="w-full h-px" />
+          <div className="space-y-4">
+            <Skeleton className="w-1/4 h-6" />
+            <Skeleton className="w-full h-24" />
+          </div>
+          <Skeleton className="w-full h-12" />
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Search, User, LogOut, Package } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CartSidebar from '../cart/CartSidebar';
 import { useCart } from '@/context/CartContext';
@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
+import { cn } from '@/lib/utils';
 
 const categories = [
   { name: 'Living Room', path: '/category/living-room' },
@@ -51,20 +53,91 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/products" className="nav-link text-sm font-medium">
-              All Products
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/" className="nav-link text-sm font-medium flex items-center gap-1">
+              <Home size={18} />
+              <span>Home</span>
             </Link>
-            {categories.map((category) => (
-              <Link key={category.name} to={category.path} className="nav-link text-sm font-medium">
-                {category.name}
-              </Link>
-            ))}
+            
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="h-9 px-3 text-sm">
+                    <Grid size={18} className="mr-1" />
+                    Products
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                      <li className="col-span-2">
+                        <NavigationMenuLink asChild>
+                          <Link to="/products" className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md">
+                            <div className="mb-2 mt-4 text-lg font-medium">
+                              All Products
+                            </div>
+                            <p className="text-sm leading-tight text-muted-foreground">
+                              Browse our complete collection of quality furniture
+                            </p>
+                          </Link>
+                        </NavigationMenuLink>
+                      </li>
+                      {categories.map((category) => (
+                        <li key={category.name}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={category.path}
+                              className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            >
+                              <div className="text-sm font-medium leading-none">{category.name}</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Quality furniture for your {category.name.toLowerCase()}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="h-9 px-3 text-sm">
+                    <Package size={18} className="mr-1" />
+                    Categories
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 w-[200px]">
+                      {categories.map((category) => (
+                        <li key={category.name}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={category.path}
+                              className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            >
+                              <div className="text-sm font-medium leading-none">{category.name}</div>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+            
+            <Link to="/about" className="nav-link text-sm font-medium flex items-center gap-1">
+              <Info size={18} />
+              <span>About</span>
+            </Link>
+            
+            <Link to="/contact" className="nav-link text-sm font-medium flex items-center gap-1">
+              <Mail size={18} />
+              <span>Contact</span>
+            </Link>
           </nav>
 
           {/* Icons */}
           <div className="flex items-center space-x-4">
-            <Link to="/products" className="nav-link p-2" aria-label="Search">
+            <Link to="/search" className="nav-link p-2" aria-label="Search">
               <Search size={20} />
             </Link>
             
@@ -135,22 +208,47 @@ const Header: React.FC = () => {
           <div className="md:hidden py-4 border-t border-border animate-fade-in">
             <nav className="flex flex-col space-y-4">
               <Link 
-                to="/products" 
-                className="nav-link text-lg font-medium py-2"
+                to="/"
+                className="nav-link text-lg font-medium py-2 flex items-center gap-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                All Products
+                <Home size={18} />
+                <span>Home</span>
+              </Link>
+              <Link 
+                to="/products" 
+                className="nav-link text-lg font-medium py-2 flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Grid size={18} />
+                <span>Products</span>
               </Link>
               {categories.map((category) => (
                 <Link 
                   key={category.name} 
                   to={category.path} 
-                  className="nav-link text-lg font-medium py-2"
+                  className="nav-link text-lg font-medium py-2 pl-8"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {category.name}
                 </Link>
               ))}
+              <Link 
+                to="/about" 
+                className="nav-link text-lg font-medium py-2 flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Info size={18} />
+                <span>About</span>
+              </Link>
+              <Link 
+                to="/contact" 
+                className="nav-link text-lg font-medium py-2 flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Mail size={18} />
+                <span>Contact</span>
+              </Link>
               {user ? (
                 <>
                   <Link 

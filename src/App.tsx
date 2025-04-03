@@ -12,6 +12,10 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Header from "./components/layout/Header";
+import Footer from "./components/layout/Footer";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Search from "./pages/Search";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -41,6 +45,9 @@ const App = () => (
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/search" element={<Search />} />
                 
                 {/* Protected User Routes */}
                 <Route element={<ProtectedRoute />}>
@@ -64,6 +71,7 @@ const App = () => (
                 {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <Footer />
             </BrowserRouter>
           </CartProvider>
         </AuthProvider>
