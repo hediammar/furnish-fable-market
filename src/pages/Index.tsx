@@ -43,14 +43,13 @@ const Index: React.FC = () => {
           'https://images.unsplash.com/photo-1486946255434-2466348c2166?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
         ];
         
-        const topCats = categories.slice(0, 4).map((category, index) => ({
-          id: category.id,
-          name: category.name,
+        const enhancedCategories = categories.slice(0, 4).map((category, index) => ({
+          ...category,
           productCount: Math.floor(Math.random() * 20) + 5,
           image: categoryImages[index % categoryImages.length]
         }));
         
-        setTopCategories(topCats);
+        setTopCategories(enhancedCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
       } finally {

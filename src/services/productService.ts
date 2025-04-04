@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mapDatabaseProductToAppProduct } from './productMappers';
@@ -27,7 +26,7 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     featured
   } = params;
 
-  // Start with a basic query - split into parts to avoid type recursion
+  // Start with a basic query
   let query = supabase.from('products').select('*');
   
   // Apply filters one by one
@@ -59,11 +58,22 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.eq('is_featured', featured);
   }
 
-  // Create separate query for sorting to avoid deep type recursion
-  const sortedQuery = applySorting(query, sort);
+  // Execute the query with sorting
+  let finalQuery = query;
+  
+  // Apply sorting
+  if (sort === 'price-asc') {
+    finalQuery = query.order('price', { ascending: true });
+  } else if (sort === 'price-desc') {
+    finalQuery = query.order('price', { ascending: false });
+  } else if (sort === 'rating') {
+    finalQuery = query.order('rating', { ascending: false });
+  } else {
+    finalQuery = query.order('created_at', { ascending: false });
+  }
   
   // Execute query
-  const { data, error } = await sortedQuery;
+  const { data, error } = await finalQuery;
   
   if (error) {
     console.error('Error fetching products:', error);

@@ -1,9 +1,12 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Product, CartItem } from '@/types/product';
 import { toast } from 'sonner';
 
 interface CartContextType {
   cartItems: CartItem[];
+  cart: CartItem[]; // Add alias for backward compatibility
+  totalPrice: number; // Add totalPrice property
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateCartItemQuantity: (productId: string, quantity: number) => void;
@@ -29,6 +32,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const savedCart = localStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+
+  // Calculate total price whenever cart changes
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0
+  );
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -90,6 +99,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     <CartContext.Provider
       value={{
         cartItems,
+        cart: cartItems, // Add alias for backward compatibility
+        totalPrice,
         addToCart,
         removeFromCart,
         updateCartItemQuantity,
