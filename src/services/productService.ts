@@ -58,18 +58,17 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.eq('is_featured', featured);
   }
 
-  // Execute the query with sorting
+  // Apply sorting based on sort parameter
   let finalQuery = query;
   
-  // Apply sorting
   if (sort === 'price-asc') {
-    finalQuery = query.order('price', { ascending: true });
+    finalQuery = finalQuery.order('price', { ascending: true });
   } else if (sort === 'price-desc') {
-    finalQuery = query.order('price', { ascending: false });
+    finalQuery = finalQuery.order('price', { ascending: false });
   } else if (sort === 'rating') {
-    finalQuery = query.order('rating', { ascending: false });
+    finalQuery = finalQuery.order('rating', { ascending: false });
   } else {
-    finalQuery = query.order('created_at', { ascending: false });
+    finalQuery = finalQuery.order('created_at', { ascending: false });
   }
   
   // Execute query
@@ -82,19 +81,6 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   
   // Map database products to our app's Product type
   return (data || []).map(mapDatabaseProductToAppProduct);
-};
-
-// Separate function to apply sorting
-const applySorting = (query: any, sort?: string) => {
-  if (sort === 'price-asc') {
-    return query.order('price', { ascending: true });
-  } else if (sort === 'price-desc') {
-    return query.order('price', { ascending: false });
-  } else if (sort === 'rating') {
-    return query.order('rating', { ascending: false });
-  } else {
-    return query.order('created_at', { ascending: false });
-  }
 };
 
 export const fetchProductById = async (id: string): Promise<Product | null> => {
@@ -132,7 +118,6 @@ export const fetchRelatedProducts = async (productId: string, category: string):
   return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
-// Create product function
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   // Convert from our app's Product type to database format
   const dbProduct = {
@@ -163,7 +148,6 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
   return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
-// Delete product function
 export const deleteProduct = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('products')

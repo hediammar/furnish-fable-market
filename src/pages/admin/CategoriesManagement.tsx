@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchCategories } from '@/services/categoryService';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/supabase';
+import { Category } from '@/types/category';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -65,7 +66,7 @@ const CategoriesManagement = () => {
         .from('categories')
         .insert({
           name: values.name,
-          description: values.description
+          description: values.description || null
         })
         .select();
         
@@ -93,7 +94,11 @@ const CategoriesManagement = () => {
     mutationFn: async ({ id, values }: { id: string; values: FormValues }) => {
       const { data, error } = await supabase
         .from('categories')
-        .update(values)
+        .update({
+          name: values.name,
+          description: values.description || null,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select();
         

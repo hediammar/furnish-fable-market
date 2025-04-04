@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import Hero from '@/components/home/Hero';
@@ -87,7 +88,7 @@ const Index: React.FC = () => {
               {topCategories.map((category) => (
                 <CategoryPreview 
                   key={category.id}
-                  category={category}
+                  category={category as any} // Use type assertion to fix TypeScript error
                 />
               ))}
             </div>

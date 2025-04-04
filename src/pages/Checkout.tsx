@@ -28,7 +28,7 @@ interface CheckoutFormData {
 }
 
 const Checkout: React.FC = () => {
-  const { cart, totalPrice, clearCart } = useCart();
+  const { cartItems, totalPrice, clearCart } = useCart();
   const { register, handleSubmit, formState: { errors }, watch } = useForm<CheckoutFormData>();
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
@@ -46,7 +46,7 @@ const Checkout: React.FC = () => {
       // Process the order (would connect to Supabase/API in real implementation)
       console.log('Order submitted:', { 
         ...data, 
-        items: cart,
+        items: cartItems,
         totalPrice 
       });
       
@@ -72,7 +72,7 @@ const Checkout: React.FC = () => {
     }
   };
 
-  if (cart.length === 0) {
+  if (cartItems.length === 0) {
     return (
       <div className="container-custom py-16 text-center">
         <h2 className="text-2xl font-medium mb-4">Your cart is empty</h2>
@@ -306,8 +306,8 @@ const Checkout: React.FC = () => {
             <h2 className="text-xl font-medium mb-6">Order Summary</h2>
             
             <div className="space-y-4 mb-6">
-              {cart.map((item) => (
-                <div key={`${item.product.id}-${item.size || 'default'}`} className="flex justify-between">
+              {cartItems.map((item) => (
+                <div key={item.product.id} className="flex justify-between">
                   <div>
                     <p className="font-medium">{item.product.name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>

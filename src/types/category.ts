@@ -3,8 +3,8 @@ export interface Category {
   id: string;
   created_at: string | null;
   name: string;
-  description?: string; // Make description optional to match database schema
+  description?: string;
   image?: string;
-  updated_at?: string; // Make updated_at optional
-  productCount?: number; // Add productCount for usage in CategoryPreview
+  updated_at?: string;
+  productCount?: number;
 }
