@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mapDatabaseProductToAppProduct } from './productMappers';
@@ -44,13 +43,13 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   }
   
   if (materials && materials.length > 0) {
-    // Fix type issue by using a proper type cast
-    query = query.in('material', materials);
+    // Use type assertion to fix type issue
+    query = query.in('material', materials as any);
   }
   
   if (colors && colors.length > 0) {
-    // Fix type issue by using a proper type cast
-    query = query.in('color', colors);
+    // Use type assertion to fix type issue
+    query = query.in('color', colors as any);
   }
   
   if (search) {
@@ -62,20 +61,18 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   }
 
   // Apply sorting based on sort parameter
-  let finalQuery = query;
-  
   if (sort === 'price-asc') {
-    finalQuery = finalQuery.order('price', { ascending: true });
+    query = query.order('price', { ascending: true });
   } else if (sort === 'price-desc') {
-    finalQuery = finalQuery.order('price', { ascending: false });
+    query = query.order('price', { ascending: false });
   } else if (sort === 'rating') {
-    finalQuery = finalQuery.order('rating', { ascending: false });
+    query = query.order('rating', { ascending: false });
   } else {
-    finalQuery = finalQuery.order('created_at', { ascending: false });
+    query = query.order('created_at', { ascending: false });
   }
   
   // Execute query
-  const { data, error } = await finalQuery;
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching products:', error);

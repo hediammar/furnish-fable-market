@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { HeroContent } from '@/types/hero';
 
 export const getHeroContent = async (page: string): Promise<HeroContent | null> => {
+  // Use a type assertion to tell TypeScript this is a valid table
   const { data, error } = await supabase
     .from('hero_content')
     .select('*')
@@ -18,7 +19,7 @@ export const getHeroContent = async (page: string): Promise<HeroContent | null> 
     throw error;
   }
   
-  return data;
+  return data as HeroContent;
 };
 
 export const getAllHeroContent = async (): Promise<HeroContent[]> => {
@@ -32,7 +33,7 @@ export const getAllHeroContent = async (): Promise<HeroContent[]> => {
     throw error;
   }
   
-  return data || [];
+  return (data || []) as HeroContent[];
 };
 
 export const saveHeroContent = async (content: HeroContent): Promise<HeroContent> => {
@@ -84,7 +85,7 @@ export const saveHeroContent = async (content: HeroContent): Promise<HeroContent
     throw result.error;
   }
   
-  return result.data;
+  return result.data as HeroContent;
 };
 
 export const uploadHeroImage = async (file: File): Promise<string> => {

@@ -68,7 +68,7 @@ export const getNewsletters = async (): Promise<Newsletter[]> => {
     throw error;
   }
   
-  return data as Newsletter[] || [];
+  return (data || []) as Newsletter[];
 };
 
 export const getNewsletterById = async (id: string): Promise<Newsletter | null> => {
@@ -97,7 +97,7 @@ export const getSubscribers = async (): Promise<NewsletterSubscriber[]> => {
     throw error;
   }
   
-  return data as NewsletterSubscriber[] || [];
+  return (data || []) as NewsletterSubscriber[];
 };
 
 export const subscribe = async (email: string, firstName?: string): Promise<void> => {
