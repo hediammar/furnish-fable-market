@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Helmet } from 'react-helmet-async';
@@ -12,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Banknote, Home, Truck, Check } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 type PaymentMethod = 'credit_card' | 'bank_transfer' | 'on_site' | 'on_delivery';
 
@@ -33,6 +33,7 @@ const Checkout: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const paymentMethod = watch('paymentMethod', 'credit_card');
 
@@ -40,28 +41,70 @@ const Checkout: React.FC = () => {
     setProcessing(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to complete your order.",
+          variant: "destructive",
+        });
+        navigate('/auth', { state: { from: '/checkout' } });
+        return;
+      }
       
-      // Process the order (would connect to Supabase/API in real implementation)
-      console.log('Order submitted:', { 
-        ...data, 
-        items: cartItems,
-        totalPrice 
-      });
+      const orderData = {
+        user_id: user.id,
+        shipping_address: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          city: data.city,
+          zipCode: data.zipCode,
+          country: data.country
+        },
+        status: 'pending',
+        payment_method: data.paymentMethod,
+        total_amount: totalPrice + (totalPrice * 0.15)
+      };
       
-      // Show success toast
+      const { data: orderResponse, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select('id')
+        .single();
+      
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        throw new Error(orderError.message);
+      }
+      
+      const orderItems = cartItems.map(item => ({
+        order_id: orderResponse.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+      
+      if (itemsError) {
+        console.error('Error adding order items:', itemsError);
+        throw new Error(itemsError.message);
+      }
+      
       toast({
         title: "Order successful!",
         description: "We've received your order and will process it shortly.",
       });
       
-      // Clear cart
       clearCart();
       
-      // Redirect to success page
       navigate('/checkout/success');
     } catch (error) {
+      console.error('Error processing order:', error);
       toast({
         title: "Error processing order",
         description: "There was a problem processing your order. Please try again.",
@@ -100,12 +143,10 @@ const Checkout: React.FC = () => {
         </Link>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Checkout Form */}
           <div className="lg:col-span-2">
             <h1 className="text-3xl font-serif mb-6">Checkout</h1>
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-              {/* Shipping Information */}
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <h2 className="text-xl font-medium mb-6">Shipping Information</h2>
                 
@@ -216,7 +257,6 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
               
-              {/* Payment Method */}
               <div className="bg-white p-6 rounded-lg shadow-sm">
                 <h2 className="text-xl font-medium mb-6">Payment Method</h2>
                 
@@ -301,7 +341,6 @@ const Checkout: React.FC = () => {
             </form>
           </div>
           
-          {/* Order Summary */}
           <div className="bg-white p-6 rounded-lg shadow-sm h-fit">
             <h2 className="text-xl font-medium mb-6">Order Summary</h2>
             
@@ -312,7 +351,7 @@ const Checkout: React.FC = () => {
                     <p className="font-medium">{item.product.name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium">{(item.product.price * item.quantity).toFixed(2)} DT</p>
                 </div>
               ))}
             </div>
@@ -322,15 +361,15 @@ const Checkout: React.FC = () => {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between">
                 <p>Subtotal</p>
-                <p className="font-medium">${totalPrice.toFixed(2)}</p>
+                <p className="font-medium">{totalPrice.toFixed(2)} DT</p>
               </div>
               <div className="flex justify-between">
                 <p>Shipping</p>
-                <p className="font-medium">$0.00</p>
+                <p className="font-medium">0.00 DT</p>
               </div>
               <div className="flex justify-between">
                 <p>Tax</p>
-                <p className="font-medium">${(totalPrice * 0.15).toFixed(2)}</p>
+                <p className="font-medium">{(totalPrice * 0.15).toFixed(2)} DT</p>
               </div>
             </div>
             
@@ -338,7 +377,7 @@ const Checkout: React.FC = () => {
             
             <div className="flex justify-between text-lg font-semibold">
               <p>Total</p>
-              <p>${(totalPrice + totalPrice * 0.15).toFixed(2)}</p>
+              <p>{(totalPrice + totalPrice * 0.15).toFixed(2)} DT</p>
             </div>
           </div>
         </div>

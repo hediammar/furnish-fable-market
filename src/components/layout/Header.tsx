@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CartSidebar from '../cart/CartSidebar';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { fetchCategories } from '@/services/categoryService';
+import { Category } from '@/types/category';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,22 +20,30 @@ import { Button } from '@/components/ui/button';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 
-const categories = [
-  { name: 'Living Room', path: '/category/living-room' },
-  { name: 'Bedroom', path: '/category/bedroom' },
-  { name: 'Dining', path: '/category/dining' },
-  { name: 'Office', path: '/category/office' },
-  { name: 'Outdoor', path: '/category/outdoor' },
-  { name: 'Decor', path: '/category/decor' },
-];
-
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartItems } = useCart();
   const { user, profile, signOut, isAdmin } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const result = await fetchCategories();
+        setCategories(result);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCategories();
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -81,15 +91,15 @@ const Header: React.FC = () => {
                         </NavigationMenuLink>
                       </li>
                       {categories.map((category) => (
-                        <li key={category.name}>
+                        <li key={category.id}>
                           <NavigationMenuLink asChild>
                             <Link
-                              to={category.path}
+                              to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                               className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                             >
                               <div className="text-sm font-medium leading-none">{category.name}</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                Quality furniture for your {category.name.toLowerCase()}
+                                {category.description || `Quality furniture for your ${category.name.toLowerCase()}`}
                               </p>
                             </Link>
                           </NavigationMenuLink>
@@ -107,10 +117,10 @@ const Header: React.FC = () => {
                   <NavigationMenuContent>
                     <ul className="grid gap-3 p-4 w-[200px]">
                       {categories.map((category) => (
-                        <li key={category.name}>
+                        <li key={category.id}>
                           <NavigationMenuLink asChild>
                             <Link
-                              to={category.path}
+                              to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                               className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                             >
                               <div className="text-sm font-medium leading-none">{category.name}</div>
@@ -225,8 +235,8 @@ const Header: React.FC = () => {
               </Link>
               {categories.map((category) => (
                 <Link 
-                  key={category.name} 
-                  to={category.path} 
+                  key={category.id}
+                  to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                   className="nav-link text-lg font-medium py-2 pl-8"
                   onClick={() => setIsMenuOpen(false)}
                 >

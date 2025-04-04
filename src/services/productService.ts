@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mapDatabaseProductToAppProduct } from './productMappers';
@@ -42,14 +43,13 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.lte('price', maxPrice);
   }
   
+  // Fix deep type instantiation by using explicit type casts
   if (materials && materials.length > 0) {
-    // Use type assertion to fix type issue
-    query = query.in('material', materials as any);
+    query = query.in('material', materials as unknown as string[]);
   }
   
   if (colors && colors.length > 0) {
-    // Use type assertion to fix type issue
-    query = query.in('color', colors as any);
+    query = query.in('color', colors as unknown as string[]);
   }
   
   if (search) {
