@@ -1,9 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Product } from '@/types/product';
-import { mapDatabaseProductToAppProduct } from './productMappers';
+import { Product, ProductFilterOptions } from '@/types/product';
 
-// Define filter parameters type to avoid excessive type inference
 export interface ProductFilterParams {
   category?: string;
   minPrice?: number;
@@ -27,10 +24,8 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     featured
   } = params;
 
-  // Start with a basic query
   let query = supabase.from('products').select('*');
   
-  // Apply filters one by one
   if (category) {
     query = query.eq('category', category);
   }
@@ -43,7 +38,6 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.lte('price', maxPrice);
   }
   
-  // Fix deep type instantiation by using explicit type casts
   if (materials && materials.length > 0) {
     query = query.in('material', materials as unknown as string[]);
   }
@@ -60,7 +54,6 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.eq('is_featured', featured);
   }
 
-  // Apply sorting based on sort parameter
   if (sort === 'price-asc') {
     query = query.order('price', { ascending: true });
   } else if (sort === 'price-desc') {
@@ -71,7 +64,6 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     query = query.order('created_at', { ascending: false });
   }
   
-  // Execute query
   const { data, error } = await query;
   
   if (error) {
@@ -79,7 +71,6 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
     throw error;
   }
   
-  // Map database products to our app's Product type
   return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
@@ -98,8 +89,33 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   return data ? mapDatabaseProductToAppProduct(data) : null;
 };
 
-export const fetchProductsByCategory = async (categoryId: string, sort = 'newest'): Promise<Product[]> => {
-  return fetchProducts({ category: categoryId, sort });
+export const fetchProductsByCategory = async (
+  categoryId: string,
+  sort: string = 'newest'
+): Promise<Product[]> => {
+  let query = supabase
+    .from('products')
+    .select('*')
+    .eq('category', categoryId) as any;
+  
+  if (sort === 'price-asc') {
+    query = query.order('price', { ascending: true });
+  } else if (sort === 'price-desc') {
+    query = query.order('price', { ascending: false });
+  } else if (sort === 'rating') {
+    query = query.order('rating', { ascending: false });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching products by category:', error);
+    throw error;
+  }
+  
+  return data as Product[];
 };
 
 export const fetchRelatedProducts = async (productId: string, category: string): Promise<Product[]> => {
@@ -119,7 +135,6 @@ export const fetchRelatedProducts = async (productId: string, category: string):
 };
 
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
-  // Convert from our app's Product type to database format
   const dbProduct = {
     name: product.name,
     description: product.description,

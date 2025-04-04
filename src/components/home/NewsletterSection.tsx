@@ -8,7 +8,6 @@ import { subscribe } from '@/services/newsletterService';
 
 const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -38,7 +37,7 @@ const NewsletterSection: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await subscribe(email, firstName || undefined);
+      await subscribe(email);
       
       toast({
         title: 'Thank you for subscribing!',
@@ -46,7 +45,6 @@ const NewsletterSection: React.FC = () => {
       });
       
       setEmail('');
-      setFirstName('');
     } catch (error) {
       console.error('Error subscribing to newsletter:', error);
       toast({
@@ -69,14 +67,6 @@ const NewsletterSection: React.FC = () => {
           </p>
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <Input
-              type="text"
-              placeholder="Your first name (optional)"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-            />
-            
             <div className="flex flex-col sm:flex-row gap-3">
               <Input
                 type="email"

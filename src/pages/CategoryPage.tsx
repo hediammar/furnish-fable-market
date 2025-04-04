@@ -1,20 +1,48 @@
-
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { fetchProductsByCategory } from '@/services/productService';
-import { fetchCategoryById } from '@/services/categoryService';
+import { fetchCategoryById, fetchCategories } from '@/services/categoryService';
 import ProductCard from '@/components/product/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Category } from '@/types/category';
 
 const CategoryPage = () => {
   const { id } = useParams<{ id: string }>();
   const [sort, setSort] = useState('newest');
+  const navigate = useNavigate();
+  
+  // Fetch all categories to check if we need to search by slug
+  const { data: allCategories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+  
+  // Find category by ID or name/slug
+  const findCategoryId = (categoryIdentifier: string, categories: Category[]) => {
+    // Check if it's a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    
+    if (uuidRegex.test(categoryIdentifier)) {
+      return categoryIdentifier;
+    }
+    
+    // If not a UUID, try to match by name (case insensitive)
+    const category = categories?.find(cat => 
+      cat.name.toLowerCase() === categoryIdentifier.toLowerCase() ||
+      cat.id === categoryIdentifier
+    );
+    
+    return category?.id;
+  };
+  
+  // Get the proper category ID
+  const categoryId = allCategories ? findCategoryId(id as string, allCategories) : null;
   
   // Fetch category information
   const { 
@@ -22,9 +50,9 @@ const CategoryPage = () => {
     isLoading: categoryLoading,
     error: categoryError
   } = useQuery({
-    queryKey: ['category', id],
-    queryFn: () => fetchCategoryById(id as string),
-    enabled: !!id
+    queryKey: ['category', categoryId],
+    queryFn: () => categoryId ? fetchCategoryById(categoryId) : null,
+    enabled: !!categoryId
   });
   
   // Fetch products for the category
@@ -33,33 +61,33 @@ const CategoryPage = () => {
     isLoading: productsLoading,
     error: productsError
   } = useQuery({
-    queryKey: ['categoryProducts', id, sort],
-    queryFn: () => fetchProductsByCategory(id as string, sort),
-    enabled: !!id
+    queryKey: ['categoryProducts', categoryId, sort],
+    queryFn: () => categoryId ? fetchProductsByCategory(categoryId, sort) : Promise.resolve([]),
+    enabled: !!categoryId
   });
   
   // Format for meta title and description
-  const metaTitle = category ? `${category.name} | Meubles Karim` : 'Category | Meubles Karim';
+  const metaTitle = category ? `${category.name} | Meubles Karim` : 'Catégorie | Meubles Karim';
   const metaDescription = category ? 
-    `Explore our ${category.name} collection. Quality furniture for your home at Meubles Karim.` : 
-    'Browse our furniture collections by category at Meubles Karim.';
+    `Explorez notre collection de ${category.name}. Des meubles de qualité pour votre maison chez Meubles Karim.` : 
+    'Parcourez nos collections de meubles par catégorie chez Meubles Karim.';
   
-  if (categoryLoading || productsLoading) {
+  if (categoryLoading || productsLoading || (allCategories && !categoryId)) {
     return <CategorySkeleton />;
   }
   
   if (categoryError || productsError || !category) {
     return (
       <div className="container-custom py-16 text-center">
-        <h2 className="text-2xl font-medium mb-4">Category Not Found</h2>
+        <h2 className="text-2xl font-medium mb-4">Catégorie Introuvable</h2>
         <p className="text-muted-foreground mb-8">
-          The category you're looking for doesn't exist or has been removed.
+          La catégorie que vous recherchez n'existe pas ou a été supprimée.
         </p>
         <Link 
           to="/" 
           className="inline-flex items-center text-furniture-taupe hover:text-furniture-brown"
         >
-          <ArrowLeft size={16} className="mr-2" /> Back to home
+          <ArrowLeft size={16} className="mr-2" /> Retour à l'accueil
         </Link>
       </div>
     );
@@ -98,10 +126,10 @@ const CategoryPage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Top Rated</SelectItem>
+                <SelectItem value="newest">Nouveau</SelectItem>
+                <SelectItem value="price-asc">Prix: Bas à Haut</SelectItem>
+                <SelectItem value="price-desc">Prix: Haut à Bas</SelectItem>
+                <SelectItem value="rating">Top Noté</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -116,9 +144,9 @@ const CategoryPage = () => {
           </div>
         ) : (
           <div className="py-16 text-center">
-            <p className="text-lg text-muted-foreground">No products found in this category.</p>
+            <p className="text-lg text-muted-foreground">Aucun produit trouvé dans cette catégorie.</p>
             <Button variant="outline" className="mt-4" asChild>
-              <Link to="/products">Browse all products</Link>
+              <Link to="/products">Parcourir toutes les produits</Link>
             </Button>
           </div>
         )}

@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { Newsletter, NewsletterSubscriber } from '@/types/supabase';
 
 export interface Newsletter {
   id: string;
@@ -100,22 +100,38 @@ export const getSubscribers = async (): Promise<NewsletterSubscriber[]> => {
   return (data || []) as NewsletterSubscriber[];
 };
 
+/**
+ * Subscribe a user to the newsletter
+ * @param email User email address
+ * @param firstName Optional first name
+ */
 export const subscribe = async (email: string, firstName?: string): Promise<void> => {
-  const { error } = await supabase
-    .from('newsletter_subscribers')
-    .insert({
-      email,
-      first_name: firstName
-    });
-  
-  if (error) {
-    // If it's a duplicate entry error, we can ignore it
-    if (error.code === '23505') {
-      console.log('Email already subscribed');
+  try {
+    // Check if email already exists
+    const { data: existingSubscribers } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .eq('email', email);
+    
+    if (existingSubscribers && existingSubscribers.length > 0) {
+      // Email already subscribed, just return
       return;
     }
     
-    console.error('Error subscribing to newsletter:', error);
+    // Insert new subscriber
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .insert({
+        email,
+        first_name: firstName || null
+      } as any);
+    
+    if (error) {
+      console.error('Error subscribing to newsletter:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in subscribe function:', error);
     throw error;
   }
 };

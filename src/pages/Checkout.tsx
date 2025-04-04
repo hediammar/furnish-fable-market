@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Banknote, Home, Truck, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 type PaymentMethod = 'credit_card' | 'bank_transfer' | 'on_site' | 'on_delivery';
 
