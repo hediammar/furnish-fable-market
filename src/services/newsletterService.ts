@@ -1,5 +1,5 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Newsletter, NewsletterSubscriber } from '@/types/supabase';
 
 export interface Newsletter {
   id: string;
@@ -124,7 +124,7 @@ export const subscribe = async (email: string, firstName?: string): Promise<void
       .insert({
         email,
         first_name: firstName || null
-      } as any);
+      });
     
     if (error) {
       console.error('Error subscribing to newsletter:', error);

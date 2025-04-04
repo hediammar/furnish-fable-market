@@ -105,16 +105,31 @@ export default {
                         opacity: '1',
                         transform: 'translateY(0)'
                     }
+                },
+                'scale-in': {
+                    '0%': {
+                        opacity: '0',
+                        transform: 'scale(0.95)'
+                    },
+                    '100%': {
+                        opacity: '1',
+                        transform: 'scale(1)'
+                    }
                 }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-                'fade-in': 'fade-in 0.5s ease-out forwards'
+                'fade-in': 'fade-in 0.5s ease-out forwards',
+                'scale-in': 'scale-in 0.3s ease-out forwards'
 			},
             fontFamily: {
                 'serif': ['Playfair Display', 'Georgia', 'serif'],
                 'sans': ['Inter', 'system-ui', 'sans-serif'],
+            },
+            boxShadow: {
+                'soft': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                'hover': '0 10px 30px rgba(0, 0, 0, 0.12)'
             }
 		}
 	},

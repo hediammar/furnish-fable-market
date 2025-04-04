@@ -21,27 +21,50 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
     // Check if the id is a UUID (to prevent the 'invalid input syntax for type uuid' error)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     
-    if (!uuidRegex.test(id)) {
-      // If not a UUID, try to find by slug or name (if your categories have such fields)
-      // For now, just log the error and return null
-      console.error('Invalid UUID format for category ID:', id);
-      return null;
+    if (uuidRegex.test(id)) {
+      // If it's a UUID, query by ID
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching category by ID:', error);
+        return null;
+      }
+      
+      return data as Category;
+    } else {
+      // If not a UUID, try to find by name
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .ilike('name', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching category by name:', error);
+        
+        // Try as a more general search
+        const { data: fuzzyData, error: fuzzyError } = await supabase
+          .from('categories')
+          .select('*')
+          .ilike('name', `%${id}%`)
+          .single();
+          
+        if (fuzzyError) {
+          console.error('Error in fuzzy category search:', fuzzyError);
+          return null;
+        }
+        
+        return fuzzyData as Category;
+      }
+      
+      return data as Category;
     }
-    
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching category:', error);
-      throw error;
-    }
-    
-    return data as Category;
   } catch (error) {
     console.error('Error fetching category:', error);
-    throw error;
+    return null;
   }
 };

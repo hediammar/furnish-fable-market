@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Product, ProductFilterOptions } from '@/types/product';
+import { Product } from '@/types/product';
 
 export interface ProductFilterParams {
   category?: string;
@@ -115,7 +116,7 @@ export const fetchProductsByCategory = async (
     throw error;
   }
   
-  return data as Product[];
+  return (data || []).map(mapDatabaseProductToAppProduct);
 };
 
 export const fetchRelatedProducts = async (productId: string, category: string): Promise<Product[]> => {
@@ -173,4 +174,23 @@ export const deleteProduct = async (id: string): Promise<void> => {
     console.error('Error deleting product:', error);
     throw error;
   }
+};
+
+// Map database product to our app's Product type
+export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description || '',
+    price: dbProduct.price,
+    images: dbProduct.images || [dbProduct.image].filter(Boolean),
+    category: dbProduct.category || '',
+    material: dbProduct.material,
+    dimensions: dbProduct.dimensions,
+    inStock: dbProduct.stock > 0,
+    stock: dbProduct.stock,
+    featured: dbProduct.is_featured,
+    new: dbProduct.is_new,
+    discount: dbProduct.discount
+  };
 };

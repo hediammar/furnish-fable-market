@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/types/product';
+import { formatPrice } from '@/utils/currencyUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -18,13 +19,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     addToCart(product);
   };
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(product.price);
-
   return (
-    <div className="group bg-white rounded-md overflow-hidden card-shadow">
+    <div className="group bg-white rounded-md overflow-hidden card-shadow animate-scale-in">
       {/* Product Image */}
       <div className="relative overflow-hidden">
         <Link to={`/product/${product.id}`}>
@@ -76,7 +72,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.category}
           </p>
           <div className="flex justify-between items-center">
-            <span className="font-semibold">{formattedPrice}</span>
+            <span className="font-semibold">{formatPrice(product.price)}</span>
             {!product.inStock && (
               <span className="text-destructive text-sm">Out of stock</span>
             )}
