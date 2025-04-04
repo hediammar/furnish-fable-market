@@ -31,6 +31,7 @@ import UsersManagement from "./pages/admin/UsersManagement";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NewsletterBuilder from "./pages/admin/NewsletterBuilder";
+import HeroManagement from "./pages/admin/HeroManagement";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
                     <Route path="categories" element={<CategoriesManagement />} />
                     <Route path="users" element={<UsersManagement />} />
                     <Route path="newsletter" element={<NewsletterBuilder />} />
+                    <Route path="hero" element={<HeroManagement />} />
                   </Route>
                 </Route>
                 

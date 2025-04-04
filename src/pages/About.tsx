@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
@@ -15,9 +14,9 @@ const About: React.FC = () => {
         <section className="bg-muted py-16">
           <div className="container-custom">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="font-serif text-4xl md:text-5xl font-medium mb-6">Our Story</h1>
+              <h1 className="font-serif text-4xl md:text-5xl font-medium mb-6">Notre Histoire</h1>
               <p className="text-lg text-muted-foreground">
-                Discover the passion and craftsmanship behind every piece of furniture we create.
+                Découvrez la passion et l'artisanat derrière chaque meuble que nous créons.
               </p>
             </div>
           </div>
@@ -28,21 +27,21 @@ const About: React.FC = () => {
           <div className="container-custom">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="font-serif text-3xl font-medium mb-6">Our Heritage of Excellence</h2>
+                <h2 className="font-serif text-3xl font-medium mb-6">Notre Héritage d'Excellence</h2>
                 <p className="text-muted-foreground mb-6">
-                  Founded in 2005, Meubles Karim began as a small workshop dedicated to creating bespoke furniture for discerning clients. Our founder, Karim Benali, brought with him generations of family expertise in woodworking and a vision to blend traditional craftsmanship with contemporary design.
+                  Meubles Karim Hammamet est une marque unique dédiée à la fabrication de meubles modernes et contemporains par son esprit aux facettes multiples axé sur la conception, les fortes tendances, les innovations créatives.
                 </p>
                 <p className="text-muted-foreground mb-6">
-                  What started as a passion project quickly grew into a renowned furniture brand as word spread about the exceptional quality and stunning designs of our pieces. Today, we continue to honor our founding principles while embracing innovation and sustainability.
+                  Le fruit d'un pas vers l'excellence et la qualité, notre entreprise a su se développer et se faire un nom dans le domaine de l'ameublement en Tunisie. Nous sommes fiers de notre héritage et de notre savoir-faire traditionnel que nous associons aux tendances modernes pour créer des pièces uniques.
                 </p>
                 <p className="text-muted-foreground">
-                  Each piece of furniture that bears our name represents our unwavering commitment to quality, beauty, and longevity—furniture that's not just built for today but designed to become tomorrow's heirlooms.
+                  Chaque meuble qui porte notre nom représente notre engagement inébranlable envers la qualité, la beauté et la longévité - des meubles qui ne sont pas seulement construits pour aujourd'hui mais conçus pour devenir les héritages de demain.
                 </p>
               </div>
               <div>
                 <img 
                   src="https://images.unsplash.com/photo-1560157368-946d9c8f7cb6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" 
-                  alt="Craftsman working on wooden furniture" 
+                  alt="Artisan travaillant sur un meuble en bois" 
                   className="rounded-lg shadow-lg"
                 />
               </div>
@@ -53,7 +52,7 @@ const About: React.FC = () => {
         {/* Our Values */}
         <section className="py-16 bg-muted">
           <div className="container-custom">
-            <h2 className="font-serif text-3xl font-medium mb-12 text-center">Our Values</h2>
+            <h2 className="font-serif text-3xl font-medium mb-12 text-center">Nos Valeurs</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-background p-8 rounded-lg shadow-sm">
@@ -66,9 +65,9 @@ const About: React.FC = () => {
                     <path d="M3.6 17h16.8"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-medium mb-3">Craftsmanship</h3>
+                <h3 className="text-xl font-medium mb-3">Artisanat</h3>
                 <p className="text-muted-foreground">
-                  We believe that true quality comes from meticulous attention to detail and expert craftsmanship. Each piece is carefully constructed by skilled artisans who take pride in their work.
+                  Nous croyons que la vraie qualité vient d'une attention méticuleuse aux détails et d'un artisanat expert. Chaque pièce est soigneusement construite par des artisans qualifiés qui sont fiers de leur travail.
                 </p>
               </div>
               
@@ -81,9 +80,9 @@ const About: React.FC = () => {
                     <path d="M6 13V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-2a3 3 0 1 1 6 0v7"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-medium mb-3">Sustainability</h3>
+                <h3 className="text-xl font-medium mb-3">Durabilité</h3>
                 <p className="text-muted-foreground">
-                  We're committed to responsibly sourced materials and environmentally conscious manufacturing processes. Our goal is to create beautiful furniture that doesn't come at the expense of our planet.
+                  Nous nous engageons à utiliser des matériaux sourcés de manière responsable et des processus de fabrication respectueux de l'environnement. Notre objectif est de créer de beaux meubles qui ne sont pas faits aux dépens de notre planète.
                 </p>
               </div>
               
@@ -99,7 +98,7 @@ const About: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-medium mb-3">Innovation</h3>
                 <p className="text-muted-foreground">
-                  While respecting traditional techniques, we continuously explore new designs, materials, and technologies to create furniture that meets the evolving needs of modern living.
+                  Tout en respectant les techniques traditionnelles, nous explorons continuellement de nouveaux designs, matériaux et technologies pour créer des meubles qui répondent aux besoins évolutifs de la vie moderne.
                 </p>
               </div>
             </div>
@@ -109,19 +108,19 @@ const About: React.FC = () => {
         {/* Our Team */}
         <section className="py-16">
           <div className="container-custom">
-            <h2 className="font-serif text-3xl font-medium mb-12 text-center">The Team Behind Our Furniture</h2>
+            <h2 className="font-serif text-3xl font-medium mb-12 text-center">L'équipe Derrière Nos Meubles</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="text-center">
                 <div className="mb-4 relative overflow-hidden rounded-full w-48 h-48 mx-auto">
                   <img 
                     src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" 
-                    alt="Karim Benali - Founder & Design Director" 
+                    alt="Karim Benali - Fondateur & Directeur de Design" 
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <h3 className="text-xl font-medium">Karim Benali</h3>
-                <p className="text-muted-foreground">Founder & Design Director</p>
+                <p className="text-muted-foreground">Fondateur & Directeur de Design</p>
               </div>
               
               <div className="text-center">
@@ -166,16 +165,16 @@ const About: React.FC = () => {
         {/* CTA Section */}
         <section className="py-16 bg-furniture-brown text-white">
           <div className="container-custom text-center">
-            <h2 className="font-serif text-3xl font-medium mb-6">Experience Our Collection</h2>
+            <h2 className="font-serif text-3xl font-medium mb-6">Découvrez Notre Collection</h2>
             <p className="text-lg mb-8 max-w-2xl mx-auto">
-              Visit our showroom or browse our online catalog to discover furniture that perfectly balances form and function for your home.
+              Visitez notre showroom ou parcourez notre catalogue en ligne pour découvrir des meubles qui équilibrent parfaitement forme et fonction pour votre maison.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a href="/products" className="bg-white text-furniture-brown hover:bg-white/90 px-8 py-3 rounded-md font-medium">
-                Browse Collection
+                Parcourir la Collection
               </a>
               <a href="/contact" className="border border-white text-white hover:bg-white/10 px-8 py-3 rounded-md font-medium">
-                Contact Us
+                Contactez-Nous
               </a>
             </div>
           </div>

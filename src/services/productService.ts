@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mapDatabaseProductToAppProduct } from './productMappers';
@@ -43,11 +44,13 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   }
   
   if (materials && materials.length > 0) {
-    query = query.in('material', materials);
+    // Use specific type assertion to avoid infinite recursion
+    query = query.in('material', materials as unknown as string[]);
   }
   
   if (colors && colors.length > 0) {
-    query = query.in('color', colors);
+    // Use specific type assertion to avoid infinite recursion
+    query = query.in('color', colors as unknown as string[]);
   }
   
   if (search) {

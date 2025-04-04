@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapPin, Mail, Phone, Clock } from 'lucide-react';
@@ -68,9 +67,9 @@ const Contact: React.FC = () => {
         <section className="bg-muted py-16">
           <div className="container-custom">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="font-serif text-4xl md:text-5xl font-medium mb-6">Contact Us</h1>
+              <h1 className="font-serif text-4xl md:text-5xl font-medium mb-6">Contactez-Nous</h1>
               <p className="text-lg text-muted-foreground">
-                Have questions or need assistance? We're here to help.
+                Vous avez des questions ou besoin d'assistance? Nous sommes là pour vous aider.
               </p>
             </div>
           </div>
@@ -82,9 +81,9 @@ const Contact: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Contact Information */}
               <div>
-                <h2 className="font-serif text-3xl font-medium mb-6">Get In Touch</h2>
+                <h2 className="font-serif text-3xl font-medium mb-6">Contactez-Nous</h2>
                 <p className="text-muted-foreground mb-8">
-                  Whether you have a question about our furniture, need help with an order, or want to schedule a showroom visit, our team is ready to assist you.
+                  Que vous ayez une question sur nos meubles, besoin d'aide avec une commande, ou que vous souhaitiez planifier une visite de notre showroom, notre équipe est prête à vous assister.
                 </p>
                 
                 <div className="space-y-6">
@@ -93,11 +92,10 @@ const Contact: React.FC = () => {
                       <MapPin className="text-furniture-brown" />
                     </div>
                     <div>
-                      <h3 className="font-medium mb-1">Our Location</h3>
+                      <h3 className="font-medium mb-1">Notre Adresse</h3>
                       <p className="text-muted-foreground">
-                        123 Furniture Ave, Suite 500<br />
-                        New York, NY 10001<br />
-                        United States
+                        Route Hammamet Nord vers Nabeul<br />
+                        Hammamet, Tunisia, 8050
                       </p>
                     </div>
                   </div>
@@ -107,13 +105,10 @@ const Contact: React.FC = () => {
                       <Mail className="text-furniture-brown" />
                     </div>
                     <div>
-                      <h3 className="font-medium mb-1">Email Us</h3>
+                      <h3 className="font-medium mb-1">Email</h3>
                       <p className="text-muted-foreground">
-                        <a href="mailto:info@meubleskarim.com" className="hover:text-furniture-brown">
-                          info@meubleskarim.com
-                        </a><br />
-                        <a href="mailto:support@meubleskarim.com" className="hover:text-furniture-brown">
-                          support@meubleskarim.com
+                        <a href="mailto:contactmkarim@gmail.com" className="hover:text-furniture-brown">
+                          contactmkarim@gmail.com
                         </a>
                       </p>
                     </div>
@@ -124,13 +119,13 @@ const Contact: React.FC = () => {
                       <Phone className="text-furniture-brown" />
                     </div>
                     <div>
-                      <h3 className="font-medium mb-1">Call Us</h3>
+                      <h3 className="font-medium mb-1">Téléphone</h3>
                       <p className="text-muted-foreground">
-                        <a href="tel:+15551234567" className="hover:text-furniture-brown">
-                          (555) 123-4567
+                        <a href="tel:+21672260360" className="hover:text-furniture-brown">
+                          +216 72 260 360
                         </a><br />
-                        Monday to Friday: 9am - 6pm<br />
-                        Saturday: 10am - 4pm
+                        Lundi au Vendredi: 9h - 18h<br />
+                        Samedi: 10h - 16h
                       </p>
                     </div>
                   </div>
@@ -140,11 +135,11 @@ const Contact: React.FC = () => {
                       <Clock className="text-furniture-brown" />
                     </div>
                     <div>
-                      <h3 className="font-medium mb-1">Showroom Hours</h3>
+                      <h3 className="font-medium mb-1">Heures d'Ouverture du Showroom</h3>
                       <p className="text-muted-foreground">
-                        Monday to Friday: 10am - 7pm<br />
-                        Saturday: 10am - 5pm<br />
-                        Sunday: 11am - 4pm
+                        Lundi au Vendredi: 10h - 19h<br />
+                        Samedi: 10h - 17h<br />
+                        Dimanche: 11h - 16h
                       </p>
                     </div>
                   </div>
@@ -154,7 +149,7 @@ const Contact: React.FC = () => {
               {/* Contact Form */}
               <div>
                 <div className="bg-muted p-8 rounded-lg">
-                  <h2 className="font-serif text-2xl font-medium mb-6">Send Us a Message</h2>
+                  <h2 className="font-serif text-2xl font-medium mb-6">Envoyez-Nous un Message</h2>
                   
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -238,11 +233,11 @@ const Contact: React.FC = () => {
         {/* Map Section */}
         <section className="py-16 bg-muted">
           <div className="container-custom">
-            <h2 className="font-serif text-3xl font-medium mb-8 text-center">Visit Our Showroom</h2>
+            <h2 className="font-serif text-3xl font-medium mb-8 text-center">Visitez Notre Showroom</h2>
             
             <div className="rounded-lg overflow-hidden h-[400px] shadow-lg">
               <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d387193.30596552045!2d-74.25987522651859!3d40.697149413874705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xc80b8f06e177fe62!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2sca!4v1593077157030!5m2!1sen!2sca" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3214.0433842973813!2d10.6079403!3d36.3978297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x13029eda2a6c5187%3A0xd2d7a288e8b3da39!2sRoute%20Hammamet%20Nord%20vers%20Nabeul%2C%20Hammamet%2C%20Tunisia!5e0!3m2!1sen!2s!4v1617961236078!5m2!1sen!2s" 
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
