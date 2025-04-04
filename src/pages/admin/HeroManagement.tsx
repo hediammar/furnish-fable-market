@@ -9,19 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Upload, Eye } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-
-interface HeroContent {
-  id: string;
-  title: string;
-  subtitle: string;
-  primary_button_text: string;
-  primary_button_link: string;
-  secondary_button_text: string;
-  secondary_button_link: string;
-  background_image: string;
-  page: string;
-}
+import { HeroContent } from '@/types/hero';
+import { getAllHeroContent, saveHeroContent, uploadHeroImage } from '@/services/heroService';
 
 const HeroManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -39,7 +28,9 @@ const HeroManagement: React.FC = () => {
     secondary_button_text: 'Our Story',
     secondary_button_link: '/about',
     background_image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80',
-    page: 'home'
+    page: 'home',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
   
   const [aboutHero, setAboutHero] = useState<HeroContent>({
@@ -51,7 +42,9 @@ const HeroManagement: React.FC = () => {
     secondary_button_text: '',
     secondary_button_link: '',
     background_image: '',
-    page: 'about'
+    page: 'about',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
   
   const [contactHero, setContactHero] = useState<HeroContent>({
@@ -63,7 +56,9 @@ const HeroManagement: React.FC = () => {
     secondary_button_text: '',
     secondary_button_link: '',
     background_image: '',
-    page: 'contact'
+    page: 'contact',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
   
   useEffect(() => {
@@ -72,11 +67,7 @@ const HeroManagement: React.FC = () => {
       
       try {
         // Fetch hero content from the database
-        const { data, error } = await supabase
-          .from('hero_content')
-          .select('*');
-        
-        if (error) throw error;
+        const data = await getAllHeroContent();
         
         if (data && data.length > 0) {
           data.forEach((item: HeroContent) => {
@@ -112,28 +103,17 @@ const HeroManagement: React.FC = () => {
         activeTab === 'home' ? homeHero : 
         activeTab === 'about' ? aboutHero : contactHero;
       
-      // Check if the content already exists
-      const { data } = await supabase
-        .from('hero_content')
-        .select('id')
-        .eq('page', activeContent.page)
-        .single();
+      // Save the content
+      const savedContent = await saveHeroContent(activeContent);
       
-      let result;
-      if (data) {
-        // Update existing content
-        result = await supabase
-          .from('hero_content')
-          .update(activeContent)
-          .eq('id', data.id);
+      // Update the local state with the saved content
+      if (activeTab === 'home') {
+        setHomeHero(savedContent);
+      } else if (activeTab === 'about') {
+        setAboutHero(savedContent);
       } else {
-        // Insert new content
-        result = await supabase
-          .from('hero_content')
-          .insert(activeContent);
+        setContactHero(savedContent);
       }
-      
-      if (result.error) throw result.error;
       
       toast({
         title: 'Success',
@@ -156,27 +136,16 @@ const HeroManagement: React.FC = () => {
     if (!file) return;
     
     try {
-      // Upload the image to Supabase Storage
-      const fileName = `hero-${activeTab}-${Date.now()}.${file.name.split('.').pop()}`;
-      
-      const { data, error } = await supabase.storage
-        .from('hero-images')
-        .upload(fileName, file);
-      
-      if (error) throw error;
-      
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('hero-images')
-        .getPublicUrl(fileName);
+      // Upload the image
+      const publicUrl = await uploadHeroImage(file);
       
       // Update the corresponding hero content
       if (activeTab === 'home') {
-        setHomeHero({ ...homeHero, background_image: urlData.publicUrl });
+        setHomeHero({ ...homeHero, background_image: publicUrl });
       } else if (activeTab === 'about') {
-        setAboutHero({ ...aboutHero, background_image: urlData.publicUrl });
+        setAboutHero({ ...aboutHero, background_image: publicUrl });
       } else {
-        setContactHero({ ...contactHero, background_image: urlData.publicUrl });
+        setContactHero({ ...contactHero, background_image: publicUrl });
       }
       
       toast({
@@ -312,7 +281,7 @@ const HeroManagement: React.FC = () => {
                         <Label htmlFor="primary_button_text">Primary Button Text</Label>
                         <Input 
                           id="primary_button_text" 
-                          value={activeContent.primary_button_text}
+                          value={activeContent.primary_button_text || ''}
                           onChange={(e) => updateActiveContent('primary_button_text', e.target.value)}
                           placeholder="e.g., Shop Now"
                         />
@@ -322,7 +291,7 @@ const HeroManagement: React.FC = () => {
                         <Label htmlFor="primary_button_link">Primary Button Link</Label>
                         <Input 
                           id="primary_button_link" 
-                          value={activeContent.primary_button_link}
+                          value={activeContent.primary_button_link || ''}
                           onChange={(e) => updateActiveContent('primary_button_link', e.target.value)}
                           placeholder="e.g., /products"
                         />
@@ -334,7 +303,7 @@ const HeroManagement: React.FC = () => {
                         <Label htmlFor="secondary_button_text">Secondary Button Text</Label>
                         <Input 
                           id="secondary_button_text" 
-                          value={activeContent.secondary_button_text}
+                          value={activeContent.secondary_button_text || ''}
                           onChange={(e) => updateActiveContent('secondary_button_text', e.target.value)}
                           placeholder="e.g., Learn More"
                         />
@@ -344,7 +313,7 @@ const HeroManagement: React.FC = () => {
                         <Label htmlFor="secondary_button_link">Secondary Button Link</Label>
                         <Input 
                           id="secondary_button_link" 
-                          value={activeContent.secondary_button_link}
+                          value={activeContent.secondary_button_link || ''}
                           onChange={(e) => updateActiveContent('secondary_button_link', e.target.value)}
                           placeholder="e.g., /about"
                         />
@@ -361,7 +330,7 @@ const HeroManagement: React.FC = () => {
                       <Label htmlFor="background_image">Image URL</Label>
                       <Input 
                         id="background_image" 
-                        value={activeContent.background_image}
+                        value={activeContent.background_image || ''}
                         onChange={(e) => updateActiveContent('background_image', e.target.value)}
                         placeholder="https://example.com/image.jpg"
                       />

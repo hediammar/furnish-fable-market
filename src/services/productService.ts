@@ -44,13 +44,13 @@ export const fetchProducts = async (params: ProductFilterParams = {}): Promise<P
   }
   
   if (materials && materials.length > 0) {
-    // Use specific type assertion to avoid infinite recursion
-    query = query.in('material', materials as unknown as string[]);
+    // Fix type issue by using a proper type cast
+    query = query.in('material', materials);
   }
   
   if (colors && colors.length > 0) {
-    // Use specific type assertion to avoid infinite recursion
-    query = query.in('color', colors as unknown as string[]);
+    // Fix type issue by using a proper type cast
+    query = query.in('color', colors);
   }
   
   if (search) {

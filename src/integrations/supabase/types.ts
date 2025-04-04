@@ -33,6 +33,99 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_content: {
+        Row: {
+          background_image: string | null
+          created_at: string
+          id: string
+          page: string
+          primary_button_link: string | null
+          primary_button_text: string | null
+          secondary_button_link: string | null
+          secondary_button_text: string | null
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          background_image?: string | null
+          created_at?: string
+          id?: string
+          page: string
+          primary_button_link?: string | null
+          primary_button_text?: string | null
+          secondary_button_link?: string | null
+          secondary_button_text?: string | null
+          subtitle: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          background_image?: string | null
+          created_at?: string
+          id?: string
+          page?: string
+          primary_button_link?: string | null
+          primary_button_text?: string | null
+          secondary_button_link?: string | null
+          secondary_button_text?: string | null
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          first_name: string | null
+          id: string
+          subscribed_at: string
+        }
+        Insert: {
+          email: string
+          first_name?: string | null
+          id?: string
+          subscribed_at?: string
+        }
+        Update: {
+          email?: string
+          first_name?: string | null
+          id?: string
+          subscribed_at?: string
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          preheader: string | null
+          sent_at: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          preheader?: string | null
+          sent_at?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          preheader?: string | null
+          sent_at?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null

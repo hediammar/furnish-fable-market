@@ -26,7 +26,7 @@ export const saveNewsletter = async (newsletter: Omit<Newsletter, 'id' | 'create
       preheader: newsletter.preheader,
       content: newsletter.content
     })
-    .select()
+    .select('*')
     .single();
   
   if (error) {
@@ -34,7 +34,7 @@ export const saveNewsletter = async (newsletter: Omit<Newsletter, 'id' | 'create
     throw error;
   }
   
-  return data;
+  return data as Newsletter;
 };
 
 export const updateNewsletter = async (id: string, newsletter: Partial<Newsletter>): Promise<Newsletter> => {
@@ -46,7 +46,7 @@ export const updateNewsletter = async (id: string, newsletter: Partial<Newslette
       content: newsletter.content
     })
     .eq('id', id)
-    .select()
+    .select('*')
     .single();
   
   if (error) {
@@ -54,7 +54,7 @@ export const updateNewsletter = async (id: string, newsletter: Partial<Newslette
     throw error;
   }
   
-  return data;
+  return data as Newsletter;
 };
 
 export const getNewsletters = async (): Promise<Newsletter[]> => {
@@ -68,7 +68,7 @@ export const getNewsletters = async (): Promise<Newsletter[]> => {
     throw error;
   }
   
-  return data || [];
+  return data as Newsletter[] || [];
 };
 
 export const getNewsletterById = async (id: string): Promise<Newsletter | null> => {
@@ -83,7 +83,7 @@ export const getNewsletterById = async (id: string): Promise<Newsletter | null> 
     throw error;
   }
   
-  return data;
+  return data as Newsletter;
 };
 
 export const getSubscribers = async (): Promise<NewsletterSubscriber[]> => {
@@ -97,7 +97,7 @@ export const getSubscribers = async (): Promise<NewsletterSubscriber[]> => {
     throw error;
   }
   
-  return data || [];
+  return data as NewsletterSubscriber[] || [];
 };
 
 export const subscribe = async (email: string, firstName?: string): Promise<void> => {
