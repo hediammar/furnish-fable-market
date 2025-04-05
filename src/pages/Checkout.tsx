@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useCart } from '@/context/CartContext';
@@ -56,7 +55,7 @@ const Checkout: React.FC = () => {
 
   const createEstimate = async (formData: CheckoutFormValues) => {
     try {
-      const { data, error } = await supabase.from('estimates').insert({
+      const { data, error } = await (supabase as any).from('estimates').insert({
         user_id: user?.id,
         total_amount: 0, // Price on request, so we don't include actual totals
         status: 'pending',
@@ -86,7 +85,6 @@ const Checkout: React.FC = () => {
 
   const sendEstimateEmail = async (email: string, estimateData: any) => {
     try {
-      // Call edge function to send email
       const { error } = await supabase.functions.invoke('send-estimate', {
         body: { 
           email,
@@ -110,13 +108,10 @@ const Checkout: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Create estimate in database
       await createEstimate(data);
       
-      // Clear cart
       clearCart();
       
-      // Redirect to success page
       navigate('/checkout/success');
       
       toast({
@@ -150,7 +145,6 @@ const Checkout: React.FC = () => {
       </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Checkout Form */}
         <Card>
           <CardHeader>
             <CardTitle>{language === 'fr' ? 'Informations de livraison' : 'Shipping Information'}</CardTitle>
@@ -255,7 +249,6 @@ const Checkout: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Order Summary */}
         <Card>
           <CardHeader>
             <CardTitle>{language === 'fr' ? 'Résumé de la commande' : 'Order Summary'}</CardTitle>
