@@ -1,9 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Partner } from '@/types/partner';
+import { Partner, PartnerDB } from '@/types/partner';
 
 export const fetchPartners = async (): Promise<Partner[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('partners')
     .select('*')
     .order('name');
@@ -13,11 +13,11 @@ export const fetchPartners = async (): Promise<Partner[]> => {
     throw error;
   }
 
-  return data || [];
+  return (data || []) as Partner[];
 };
 
 export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' | 'updated_at'>): Promise<Partner> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('partners')
     .insert(partner)
     .select()
@@ -28,11 +28,11 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
     throw error;
   }
 
-  return data;
+  return data as Partner;
 };
 
 export const updatePartner = async (id: string, partner: Partial<Partner>): Promise<Partner> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('partners')
     .update(partner)
     .eq('id', id)
@@ -44,11 +44,11 @@ export const updatePartner = async (id: string, partner: Partial<Partner>): Prom
     throw error;
   }
 
-  return data;
+  return data as Partner;
 };
 
 export const deletePartner = async (id: string): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('partners')
     .delete()
     .eq('id', id);

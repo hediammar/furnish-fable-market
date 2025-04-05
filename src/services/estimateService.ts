@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Estimate {
   id: string;
@@ -19,7 +20,7 @@ export interface Estimate {
 }
 
 export const fetchEstimates = async (): Promise<Estimate[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('estimates')
     .select('*')
     .order('created_at', { ascending: false });
@@ -29,11 +30,14 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
     throw error;
   }
 
-  return data || [];
+  return (data || []).map((estimate: any) => ({
+    ...estimate,
+    status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed'
+  })) as Estimate[];
 };
 
 export const fetchEstimateById = async (id: string): Promise<Estimate> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('estimates')
     .select('*')
     .eq('id', id)
@@ -44,11 +48,14 @@ export const fetchEstimateById = async (id: string): Promise<Estimate> => {
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    status: data.status as 'pending' | 'approved' | 'rejected' | 'completed'
+  } as Estimate;
 };
 
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('estimates')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', id);
@@ -60,7 +67,7 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
 };
 
 export const deleteEstimate = async (id: string): Promise<void> => {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('estimates')
     .delete()
     .eq('id', id);

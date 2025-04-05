@@ -25,6 +25,34 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Save, X, ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { mapDatabaseProductToAppProduct } from '@/services/productMappers';
+
+// Define DB product type to handle the direct data from database
+interface DBProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  images: string[] | null;
+  category: string | null;
+  material: string | null;
+  dimensions: string | null;
+  stock: number | null;
+  is_featured: boolean | null;
+  is_new: boolean | null;
+  discount: number | null;
+  image: string | null;
+  colors: string[] | null;
+  created_at: string;
+  updated_at: string;
+  weight: string | null;
+  warranty: string | null;
+  assembly: string | null;
+  rating: number | null;
+  review_count: number | null;
+  full_description: string | null;
+  sizes: string[] | null;
+}
 
 const productSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -45,6 +73,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const EditProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
+  const [dbProduct, setDbProduct] = useState<DBProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -90,21 +119,26 @@ const EditProductForm: React.FC = () => {
         }
         
         if (data) {
-          setProduct(data);
-          setImages(data.images || []);
+          // Save the raw DB data
+          setDbProduct(data as DBProduct);
+          
+          // Convert to app product format
+          const appProduct = mapDatabaseProductToAppProduct(data);
+          setProduct(appProduct);
+          setImages(appProduct.images || []);
           
           form.reset({
-            name: data.name,
-            description: data.description || '',
-            price: data.price,
-            stock: data.stock || 0,
-            inStock: data.inStock,
-            category: data.category || '',
-            material: data.material || '',
-            dimensions: data.dimensions || '',
-            featured: data.featured || false,
-            new: data.new || false,
-            color: data.color || '#000000',
+            name: appProduct.name,
+            description: appProduct.description || '',
+            price: appProduct.price,
+            stock: appProduct.stock || 0,
+            inStock: appProduct.inStock,
+            category: appProduct.category || '',
+            material: appProduct.material || '',
+            dimensions: appProduct.dimensions || '',
+            featured: appProduct.featured || false,
+            new: appProduct.new || false,
+            color: data.colors && data.colors[0] ? data.colors[0] : '#000000',
           });
         }
       } catch (error) {
@@ -135,14 +169,13 @@ const EditProductForm: React.FC = () => {
           description: values.description,
           price: values.price,
           stock: values.stock,
-          inStock: values.inStock,
           category: values.category,
           material: values.material,
           dimensions: values.dimensions,
-          featured: values.featured,
-          new: values.new,
+          is_featured: values.featured,
+          is_new: values.new,
           images: images,
-          color: values.color,
+          colors: values.color ? [values.color] : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
