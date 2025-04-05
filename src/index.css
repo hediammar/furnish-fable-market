@@ -1,6 +1,7 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,7 +9,7 @@
 
 @layer base {
   :root {
-    --background: 38 33% 97%;
+    --background: 38 33% 98%;
     --foreground: 20 10% 20%;
 
     --card: 0 0% 100%;
@@ -36,7 +37,7 @@
     --input: 20 10% 90%;
     --ring: 26 12% 56%;
 
-    --radius: 0.25rem;
+    --radius: 0.4rem;
   }
 }
 
@@ -47,10 +48,12 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
+    letter-spacing: 0.02em;
   }
 }
 
@@ -59,19 +62,19 @@
 }
 
 .product-image {
-  @apply aspect-[4/3] object-cover rounded;
+  @apply aspect-[4/3] object-cover rounded shadow-soft;
 }
 
 .btn-primary {
-  @apply bg-furniture-taupe hover:bg-furniture-brown text-white font-medium px-6 py-3 rounded-md transition-colors duration-300;
+  @apply bg-furniture-taupe hover:bg-furniture-brown text-white font-medium px-6 py-3 rounded-md transition-colors duration-300 shadow-sm hover:shadow-md;
 }
 
 .btn-secondary {
-  @apply bg-transparent border border-furniture-taupe text-furniture-taupe hover:bg-furniture-taupe hover:text-white font-medium px-6 py-3 rounded-md transition-colors duration-300;
+  @apply bg-transparent border border-furniture-taupe text-furniture-taupe hover:bg-furniture-taupe hover:text-white font-medium px-6 py-3 rounded-md transition-colors duration-300 shadow-sm;
 }
 
 .nav-link {
-  @apply text-foreground hover:text-furniture-brown transition-colors duration-300;
+  @apply text-foreground hover:text-furniture-brown transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:scale-x-0 after:bg-furniture-taupe after:transition-transform hover:after:scale-x-100;
 }
 
 .card-shadow {
@@ -80,4 +83,44 @@
 
 .currency-display::after {
   content: " DT";
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+/* Luxury UI elements */
+.luxury-card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100;
+}
+
+.luxury-input {
+  @apply bg-white border border-gray-200 focus:border-furniture-taupe focus:ring focus:ring-furniture-taupe/20 rounded-md px-4 py-2 transition-all duration-200;
+}
+
+.luxury-button {
+  @apply bg-furniture-taupe text-white px-6 py-3 rounded-md hover:bg-furniture-brown transition-colors duration-300 shadow-sm hover:shadow-md font-medium;
+}
+
+.section-title {
+  @apply font-serif font-light text-3xl md:text-4xl mb-6 tracking-wide;
+}
+
+.section-subtitle {
+  @apply text-furniture-taupe text-lg mb-12 max-w-2xl mx-auto;
 }

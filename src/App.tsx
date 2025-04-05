@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { LanguageProvider } from "./context/LanguageContext";
 import Index from "./pages/Index";
 import ProductPage from "./pages/ProductPage";
 import CategoryPage from "./pages/CategoryPage";
@@ -41,49 +42,51 @@ const App = () => (
       <HelmetProvider>
         <AuthProvider>
           <CartProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Header />
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/category/:id" element={<CategoryPage />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/checkout/success" element={<CheckoutSuccess />} />
-                
-                {/* Protected User Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/orders" element={<OrdersPage />} />
-                </Route>
-                
-                {/* Protected Admin Routes */}
-                <Route element={<ProtectedRoute requireAdmin />}>
-                  <Route path="/admin" element={<AdminDashboard />}>
-                    <Route index element={<Overview />} />
-                    <Route path="products" element={<ProductsManagement />} />
-                    <Route path="products/new" element={<AddProductForm />} />
-                    <Route path="products/edit/:id" element={<div>Edit Product Form (To Be Implemented)</div>} />
-                    <Route path="orders" element={<OrdersManagement />} />
-                    <Route path="categories" element={<CategoriesManagement />} />
-                    <Route path="users" element={<UsersManagement />} />
-                    <Route path="newsletter" element={<NewsletterBuilder />} />
-                    <Route path="hero" element={<HeroManagement />} />
+            <LanguageProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Header />
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/product/:id" element={<ProductPage />} />
+                  <Route path="/category/:id" element={<CategoryPage />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                  
+                  {/* Protected User Routes */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/orders" element={<OrdersPage />} />
                   </Route>
-                </Route>
-                
-                {/* 404 Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Footer />
-            </BrowserRouter>
+                  
+                  {/* Protected Admin Routes */}
+                  <Route element={<ProtectedRoute requireAdmin />}>
+                    <Route path="/admin" element={<AdminDashboard />}>
+                      <Route index element={<Overview />} />
+                      <Route path="products" element={<ProductsManagement />} />
+                      <Route path="products/new" element={<AddProductForm />} />
+                      <Route path="products/edit/:id" element={<div>Edit Product Form (To Be Implemented)</div>} />
+                      <Route path="orders" element={<OrdersManagement />} />
+                      <Route path="categories" element={<CategoriesManagement />} />
+                      <Route path="users" element={<UsersManagement />} />
+                      <Route path="newsletter" element={<NewsletterBuilder />} />
+                      <Route path="hero" element={<HeroManagement />} />
+                    </Route>
+                  </Route>
+                  
+                  {/* 404 Route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <Footer />
+              </BrowserRouter>
+            </LanguageProvider>
           </CartProvider>
         </AuthProvider>
       </HelmetProvider>
