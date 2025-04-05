@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useCart } from '@/context/CartContext';
@@ -14,6 +15,14 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/utils/currencyUtils';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 const checkoutFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -27,13 +36,11 @@ const checkoutFormSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 const Checkout: React.FC = () => {
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, clearCart, totalPrice } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  
-  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -47,47 +54,40 @@ const Checkout: React.FC = () => {
     },
   });
 
-const createOrder = async (orderData: any) => {
-  try {
-    const { data, error } = await supabase.from('orders').insert({
-      user_id: user?.id,
-      total_amount: cartTotal,
-      status: 'pending',
-      shipping_address: `${address}, ${city}, ${zipCode}, ${country}`,
-      items: cartItems.map(item => ({
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      // Remove payment_method field since it doesn't exist in the schema
-      // payment_method: paymentMethod,
-      contact_email: email,
-      contact_phone: phone
-    }).select();
-    
-    if (error) {
+  const createOrder = async (formData: CheckoutFormValues) => {
+    try {
+      const { data, error } = await supabase.from('orders').insert({
+        user_id: user?.id,
+        total_amount: totalPrice,
+        status: 'pending',
+        shipping_address: `${formData.address}, ${formData.city}, ${formData.zipCode}, ${formData.country}`,
+        items: cartItems.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        })),
+        contact_email: formData.email,
+        contact_phone: formData.phone
+      }).select();
+      
+      if (error) {
+        console.error('Error creating order:', error);
+        throw error;
+      }
+      
+      return data[0];
+    } catch (error) {
       console.error('Error creating order:', error);
       throw error;
     }
-    
-    return data[0];
-  } catch (error) {
-    console.error('Error creating order:', error);
-    throw error;
-  }
-};
+  };
 
   const onSubmit = async (data: CheckoutFormValues) => {
     setIsProcessing(true);
     
     try {
       // Create order in database
-      const orderData = await createOrder({
-        ...data,
-        // Don't include payment_method
-        cartItems,
-        cartTotal
-      });
+      const orderData = await createOrder(data);
       
       // Clear cart
       clearCart();
@@ -129,53 +129,89 @@ const createOrder = async (orderData: any) => {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" {...form.register("email")} />
-                  {form.formState.errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" {...form.register("phone")} />
-                  {form.formState.errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div>
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" type="text" {...form.register("address")} />
-                  {form.formState.errors.address && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.address.message}</p>
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" type="text" {...form.register("city")} />
-                  {form.formState.errors.city && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message}</p>
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div>
-                  <Label htmlFor="zipCode">Zip Code</Label>
-                  <Input id="zipCode" type="text" {...form.register("zipCode")} />
-                  {form.formState.errors.zipCode && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.zipCode.message}</p>
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zip Code</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input id="country" type="text" {...form.register("country")} />
-                  {form.formState.errors.country && (
-                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.country.message}</p>
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
                 <Button type="submit" disabled={isProcessing} className="w-full">
                   {isProcessing ? 'Processing...' : 'Place Order'}
@@ -194,16 +230,16 @@ const createOrder = async (orderData: any) => {
           <CardContent>
             <ul className="space-y-3">
               {cartItems.map((item) => (
-                <li key={item.id} className="flex justify-between">
-                  <span>{item.name} x {item.quantity}</span>
-                  <span>{formatPrice(item.price * item.quantity)}</span>
+                <li key={item.product.id} className="flex justify-between">
+                  <span>{item.product.name} x {item.quantity}</span>
+                  <span>{formatPrice(item.product.price * item.quantity)}</span>
                 </li>
               ))}
             </ul>
             <Separator className="my-4" />
             <div className="flex justify-between font-medium">
               <span>Total</span>
-              <span>{formatPrice(cartTotal)}</span>
+              <span>{formatPrice(totalPrice)}</span>
             </div>
           </CardContent>
           <CardFooter>

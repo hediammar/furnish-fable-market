@@ -6,6 +6,10 @@
  * @returns Formatted price string
  */
 export const formatPrice = (price: number, showCurrency = true): string => {
+  if (isNaN(price) || price === null || price === undefined) {
+    return showCurrency ? '0.00 DT' : '0.00';
+  }
+  
   // Format number to 2 decimal places
   const formattedPrice = Number(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
   
@@ -19,6 +23,7 @@ export const formatPrice = (price: number, showCurrency = true): string => {
  * @returns Parsed price as number
  */
 export const parsePrice = (priceString: string): number => {
+  if (!priceString) return 0;
   // Remove currency symbol and commas, then parse as float
   return parseFloat(priceString.replace(/[^\d.-]/g, ''));
 };

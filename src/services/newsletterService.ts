@@ -11,9 +11,11 @@ export interface NewsletterSubscriber {
 export interface Newsletter {
   id?: string;
   subject: string;
-  content: string;
+  content: any; // Changed from string to any to match the jsonb type in Supabase
+  preheader?: string;
   sent_at?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export const subscribeToNewsletter = async (subscriber: { email: string, first_name?: string }): Promise<void> => {
@@ -37,7 +39,7 @@ export const getNewsletterSubscribers = async (): Promise<NewsletterSubscriber[]
     const { data, error } = await supabase
       .from('newsletter_subscribers')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('subscribed_at', { ascending: false });
       
     if (error) {
       console.error('Error fetching newsletter subscribers:', error);
@@ -63,14 +65,14 @@ export const getNewsletters = async (): Promise<Newsletter[]> => {
       throw error;
     }
     
-    return data || [];
+    return data as Newsletter[] || [];
   } catch (error) {
     console.error('Error in getNewsletters:', error);
     return [];
   }
 };
 
-export const createNewsletter = async (newsletter: { subject: string, content: string }): Promise<Newsletter | null> => {
+export const createNewsletter = async (newsletter: { subject: string, content: any, preheader?: string }): Promise<Newsletter | null> => {
   try {
     const { data, error } = await supabase
       .from('newsletters')
@@ -82,7 +84,7 @@ export const createNewsletter = async (newsletter: { subject: string, content: s
       throw error;
     }
     
-    return data?.[0] || null;
+    return data?.[0] as Newsletter || null;
   } catch (error) {
     console.error('Error in createNewsletter:', error);
     throw error;

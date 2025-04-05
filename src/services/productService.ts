@@ -2,9 +2,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { formatPrice } from '@/utils/currencyUtils';
+import { mapDatabaseProductToAppProduct } from '@/services/productMappers';
 
 // Define the filter options locally to avoid circular imports
-interface ProductFilterOptions {
+export interface ProductFilterOptions {
   category?: string;
   search?: string;
   featured?: boolean;
@@ -28,7 +29,7 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
     }
     
     if (options.featured !== undefined) {
-      query = query.eq('featured', options.featured);
+      query = query.eq('is_featured', options.featured);
     }
     
     if (options.minPrice !== undefined) {
@@ -74,11 +75,8 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
       throw error;
     }
     
-    // Format the prices to include the currency symbol
-    return (data || []).map(product => ({
-      ...product,
-      formattedPrice: formatPrice(product.price)
-    })) as Product[];
+    // Map database products to app products
+    return (data || []).map(dbProduct => mapDatabaseProductToAppProduct(dbProduct));
   } catch (error) {
     console.error('Error in fetchProducts:', error);
     return [];
@@ -100,10 +98,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     
     if (!data) return null;
     
-    return {
-      ...data,
-      formattedPrice: formatPrice(data.price)
-    } as Product;
+    return mapDatabaseProductToAppProduct(data);
   } catch (error) {
     console.error('Error in fetchProductById:', error);
     return null;
@@ -155,13 +150,60 @@ export const fetchRelatedProducts = async (productId: string, category: string):
       throw error;
     }
     
-    // Format the prices to include the currency symbol
-    return (data || []).map(product => ({
-      ...product,
-      formattedPrice: formatPrice(product.price)
-    })) as Product[];
+    // Map database products to app products
+    return (data || []).map(dbProduct => mapDatabaseProductToAppProduct(dbProduct));
   } catch (error) {
     console.error('Error in fetchRelatedProducts:', error);
     return [];
+  }
+};
+
+// Add the deleteProduct function that was missing
+export const deleteProduct = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteProduct:', error);
+    throw error;
+  }
+};
+
+// Add the createProduct function that was missing
+export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .insert([{
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        material: product.material,
+        dimensions: product.dimensions,
+        images: product.images,
+        stock: product.stock || 0,
+        is_featured: product.featured || false,
+        is_new: product.new || false,
+        discount: product.discount || 0
+      }])
+      .select();
+    
+    if (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
+    
+    return data && data.length > 0 ? mapDatabaseProductToAppProduct(data[0]) : null;
+  } catch (error) {
+    console.error('Error in createProduct:', error);
+    throw error;
   }
 };
