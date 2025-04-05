@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useCart } from '@/context/CartContext';
@@ -13,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
+import { ShoppingBag, Truck, CheckCircle, Loader2 } from 'lucide-react';
 import {
   Form,
   FormControl,
@@ -140,143 +142,242 @@ const Checkout: React.FC = () => {
         <meta name="description" content={language === 'fr' ? 'Demandez une estimation pour vos meubles' : 'Request an estimate for your furniture'} />
       </Helmet>
       
-      <h1 className="font-serif text-3xl font-medium mb-8">
-        {language === 'fr' ? 'Demande d\'estimation' : 'Request Estimate'}
-      </h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>{language === 'fr' ? 'Informations de livraison' : 'Shipping Information'}</CardTitle>
-            <CardDescription>
-              {language === 'fr' ? 'Entrez vos coordonnées pour recevoir une estimation' : 'Enter your details to receive an estimate'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Email' : 'Email'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Numéro de téléphone' : 'Phone Number'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Adresse' : 'Address'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Ville' : 'City'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="zipCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Code postal' : 'Zip Code'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'fr' ? 'Pays' : 'Country'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button type="submit" disabled={isProcessing} className="w-full">
-                  {isProcessing 
-                    ? (language === 'fr' ? 'Traitement en cours...' : 'Processing...') 
-                    : (language === 'fr' ? 'Demander une estimation' : 'Request Estimate')}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+      <div className="max-w-6xl mx-auto">
+        <h1 className="font-serif text-3xl font-medium mb-2">
+          {language === 'fr' ? 'Demande d\'estimation' : 'Request Estimate'}
+        </h1>
+        <p className="text-muted-foreground mb-8">
+          {language === 'fr' 
+            ? 'Remplissez le formulaire ci-dessous pour recevoir une estimation personnalisée.'
+            : 'Fill out the form below to receive a personalized estimate.'}
+        </p>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>{language === 'fr' ? 'Résumé de la commande' : 'Order Summary'}</CardTitle>
-            <CardDescription>
-              {language === 'fr' ? 'Vérifiez les détails de votre commande' : 'Review your order details'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {cartItems.map((item) => (
-                <li key={item.product.id} className="flex justify-between">
-                  <span>{item.product.name} x {item.quantity}</span>
-                  <span>{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
-                </li>
-              ))}
-            </ul>
-            <Separator className="my-4" />
-            <div className="flex justify-between font-medium">
-              <span>{language === 'fr' ? 'Total' : 'Total'}</span>
-              <span>{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-8">
+            {/* Steps */}
+            <div className="hidden md:flex items-center justify-between mb-8">
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-furniture-taupe text-white flex items-center justify-center">
+                  <ShoppingBag size={18} />
+                </div>
+                <span className="text-sm mt-2">{language === 'fr' ? 'Panier' : 'Cart'}</span>
+              </div>
+              <div className="h-0.5 bg-furniture-taupe flex-1 mx-4"></div>
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-furniture-taupe text-white flex items-center justify-center">
+                  <Truck size={18} />
+                </div>
+                <span className="text-sm mt-2 font-medium">{language === 'fr' ? 'Informations' : 'Information'}</span>
+              </div>
+              <div className="h-0.5 bg-gray-300 flex-1 mx-4"></div>
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center">
+                  <CheckCircle size={18} />
+                </div>
+                <span className="text-sm mt-2 text-gray-500">{language === 'fr' ? 'Confirmation' : 'Confirmation'}</span>
+              </div>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="secondary" onClick={() => navigate('/cart')}>
-              {language === 'fr' ? 'Retour au panier' : 'Back to Cart'}
-            </Button>
-          </CardFooter>
-        </Card>
+            
+            <Card className="border-furniture-cream shadow-md">
+              <CardHeader className="bg-furniture-beige bg-opacity-30 border-b">
+                <CardTitle>{language === 'fr' ? 'Informations de livraison' : 'Shipping Information'}</CardTitle>
+                <CardDescription>
+                  {language === 'fr' ? 'Entrez vos coordonnées pour recevoir une estimation' : 'Enter your details to receive an estimate'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'fr' ? 'Email' : 'Email'}</FormLabel>
+                            <FormControl>
+                              <Input {...field} className="luxury-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'fr' ? 'Numéro de téléphone' : 'Phone Number'}</FormLabel>
+                            <FormControl>
+                              <Input {...field} className="luxury-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{language === 'fr' ? 'Adresse' : 'Address'}</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="luxury-input" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'fr' ? 'Ville' : 'City'}</FormLabel>
+                            <FormControl>
+                              <Input {...field} className="luxury-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="zipCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'fr' ? 'Code postal' : 'Zip Code'}</FormLabel>
+                            <FormControl>
+                              <Input {...field} className="luxury-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{language === 'fr' ? 'Pays' : 'Country'}</FormLabel>
+                            <FormControl>
+                              <Input {...field} className="luxury-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="pt-4">
+                      <Button 
+                        type="submit" 
+                        disabled={isProcessing} 
+                        className="w-full py-6 bg-furniture-taupe hover:bg-furniture-brown text-white font-semibold rounded-md transition-colors"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {language === 'fr' ? 'Traitement en cours...' : 'Processing...'}
+                          </>
+                        ) : (
+                          language === 'fr' ? 'Demander une estimation' : 'Request Estimate'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card className="border-furniture-cream shadow-md">
+              <CardHeader className="bg-furniture-beige bg-opacity-30 border-b">
+                <CardTitle>{language === 'fr' ? 'Résumé de la commande' : 'Order Summary'}</CardTitle>
+                <CardDescription>
+                  {language === 'fr' ? 'Vérifiez les détails de votre commande' : 'Review your order details'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ul className="space-y-3">
+                  {cartItems.map((item) => (
+                    <li key={item.product.id} className="flex justify-between py-2">
+                      <div className="flex items-center">
+                        <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 mr-3 border">
+                          {item.product.images && item.product.images.length > 0 && (
+                            <img 
+                              src={item.product.images[0]} 
+                              alt={item.product.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">{item.product.name}</h4>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {language === 'fr' ? 'Prix sur demande' : 'Price on request'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <Separator className="my-4" />
+                <div className="flex justify-between font-medium">
+                  <span>{language === 'fr' ? 'Total' : 'Total'}</span>
+                  <span>{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
+                </div>
+              </CardContent>
+              <CardFooter className="bg-gray-50 flex flex-col space-y-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/cart')}
+                  className="w-full"
+                >
+                  {language === 'fr' ? 'Retour au panier' : 'Back to Cart'}
+                </Button>
+                
+                <div className="text-xs text-muted-foreground text-center px-2">
+                  {language === 'fr' 
+                    ? 'En demandant une estimation, vous recevrez un devis personnalisé par email.'
+                    : 'By requesting an estimate, you will receive a personalized quote by email.'}
+                </div>
+              </CardFooter>
+            </Card>
+            
+            <div className="bg-furniture-cream bg-opacity-30 rounded-lg p-4 text-sm">
+              <h4 className="font-medium mb-2">
+                {language === 'fr' ? 'Comment ça marche?' : 'How it works?'}
+              </h4>
+              <ol className="list-decimal pl-4 space-y-2 text-muted-foreground">
+                <li>
+                  {language === 'fr' 
+                    ? 'Soumettez votre demande d\'estimation'
+                    : 'Submit your estimate request'}
+                </li>
+                <li>
+                  {language === 'fr' 
+                    ? 'Recevez un devis personnalisé par email'
+                    : 'Receive a personalized quote by email'}
+                </li>
+                <li>
+                  {language === 'fr' 
+                    ? 'Un conseiller vous contactera pour finaliser votre commande'
+                    : 'A consultant will contact you to finalize your order'}
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

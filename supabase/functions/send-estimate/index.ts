@@ -1,126 +1,281 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
-// Set up Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
+// Define CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+interface EstimateRequestBody {
+  email: string;
+  estimate: any;
+  items: any[];
+  language: string;
+}
+
+// Function to generate PDF-like content as HTML
+function generateEstimateHTML(estimate: any, items: any[], language: string): string {
+  const isEnglish = language !== 'fr';
+  
+  const productsTable = items.map((item, index) => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${index + 1}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.product.name}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">${isEnglish ? 'Price on request' : 'Prix sur demande'}</td>
+    </tr>
+  `).join('');
+
+  const addressParts = estimate.shipping_address.split(',').map((part: string) => part.trim());
+  
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>${isEnglish ? 'Estimate Request' : 'Demande d\'estimation'} - #${estimate.id.substring(0, 8)}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        color: #333;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        color: #9F8E7D;
+        margin-bottom: 5px;
+      }
+      .header p {
+        color: #666;
+        font-size: 14px;
+      }
+      .estimate-info {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .estimate-details, .customer-details {
+        width: 48%;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #9F8E7D;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th {
+        background-color: #f8f9fa;
+        padding: 10px;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .footer {
+        margin-top: 40px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 20px;
+      }
+      .note {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 30px;
+      }
+      .note p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Meubles Karim</h1>
+        <p>${isEnglish ? 'Estimate Request' : 'Demande d\'estimation'} #${estimate.id.substring(0, 8)}</p>
+      </div>
+      
+      <div class="estimate-info">
+        <div class="estimate-details">
+          <div class="section-title">${isEnglish ? 'Estimate Details' : 'Détails de l\'estimation'}</div>
+          <p><strong>${isEnglish ? 'Date' : 'Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
+          <p><strong>${isEnglish ? 'Status' : 'Statut'}:</strong> ${estimate.status === 'pending' ? (isEnglish ? 'Pending' : 'En attente') : estimate.status}</p>
+        </div>
+        
+        <div class="customer-details">
+          <div class="section-title">${isEnglish ? 'Customer Information' : 'Informations client'}</div>
+          <p><strong>${isEnglish ? 'Email' : 'Email'}:</strong> ${estimate.contact_email}</p>
+          <p><strong>${isEnglish ? 'Phone' : 'Téléphone'}:</strong> ${estimate.contact_phone}</p>
+          <p><strong>${isEnglish ? 'Address' : 'Adresse'}:</strong><br>
+            ${addressParts.join('<br>')}
+          </p>
+        </div>
+      </div>
+      
+      <div class="section-title">${isEnglish ? 'Requested Items' : 'Articles demandés'}</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 55%;">${isEnglish ? 'Product' : 'Produit'}</th>
+            <th style="width: 15%; text-align: center;">${isEnglish ? 'Quantity' : 'Quantité'}</th>
+            <th style="width: 25%; text-align: right;">${isEnglish ? 'Price' : 'Prix'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${productsTable}
+        </tbody>
+      </table>
+      
+      <div class="note">
+        <p><strong>${isEnglish ? 'Note' : 'Note'}:</strong> ${isEnglish ? 'We will contact you shortly with a detailed price estimate for the requested items.' : 'Nous vous contacterons prochainement avec une estimation détaillée des prix pour les articles demandés.'}</p>
+      </div>
+      
+      <div class="footer">
+        <p>Meubles Karim | Route Hammamet Nord vers Nabeul, Hammamet, Tunisia, 8050 | (+216) 72 260 360</p>
+        <p>${isEnglish ? 'Thank you for your interest in our products!' : 'Merci pour votre intérêt pour nos produits!'}</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+// Main handler function
+const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    // Parse the request body
-    const { email, estimate, items, language } = await req.json();
-
+    const body: EstimateRequestBody = await req.json();
+    const { email, estimate, items, language } = body;
+    
     if (!email || !estimate || !items) {
+      throw new Error("Missing required fields in request body");
+    }
+    
+    console.log("Preparing to send estimate email to:", email);
+    
+    // Generate HTML content for the email
+    const htmlContent = generateEstimateHTML(estimate, items, language);
+
+    // Send email using Supabase Edge Function (call another service or smtp)
+    // Example using a mocked email service
+    const emailSubject = language === 'fr' 
+      ? `Demande d'estimation #${estimate.id.substring(0, 8)} - Meubles Karim`
+      : `Estimate Request #${estimate.id.substring(0, 8)} - Meubles Karim`;
+    
+    // This would be replaced with a real email sending implementation
+    // For now, we'll simulate a successful response
+    
+    // Note: In a real implementation, you would:
+    // 1. Use a service like SendGrid, Resend, SMTP client, etc.
+    // 2. Send an actual email with the HTML content
+    // 3. Return a proper response with the email service's response
+    
+    // Example: If using actual SMTP or email service
+    try {
+      // This is where you'd implement the actual email sending
+      // For example:
+      // await sendEmail({
+      //   to: email,
+      //   subject: emailSubject,
+      //   html: htmlContent
+      // });
+      
+      // For now, let's log the attempt
+      console.log("Would send email with subject:", emailSubject);
+      console.log("Email recipient:", email);
+      console.log("Email HTML length:", htmlContent.length);
+      
+      // Insert a record into a `email_logs` table to track the email
+      const { error: logError } = await supabase
+        .from('email_logs')
+        .insert({
+          email: email,
+          subject: emailSubject,
+          related_id: estimate.id,
+          related_type: 'estimate',
+          success: true
+        });
+        
+      if (logError) {
+        console.error("Error logging email send attempt:", logError);
+      }
+      
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        JSON.stringify({ 
+          success: true, 
+          message: "Estimate email would be sent (email sending simulation)" 
+        }), 
+        { 
+          status: 200, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
         }
       );
+    } catch (emailError) {
+      console.error("Error in email sending:", emailError);
+      
+      // Log the failed attempt
+      await supabase
+        .from('email_logs')
+        .insert({
+          email: email,
+          subject: emailSubject,
+          related_id: estimate.id,
+          related_type: 'estimate',
+          success: false,
+          error_message: String(emailError)
+        });
+        
+      throw new Error(`Failed to send email: ${String(emailError)}`);
     }
-
-    // In a real environment, you would generate a PDF here
-    // For now, we'll just send an email
-    const emailSubject = language === 'fr' 
-      ? "Votre demande d'estimation de Meubles Karim" 
-      : "Your Estimate Request from Meubles Karim";
-
-    // Create the email content
-    let itemsList = "";
-    items.forEach(item => {
-      itemsList += `<tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${item.product.name}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${item.quantity}</td>
-      </tr>`;
-    });
-
-    const emailContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            h1 { color: #333366; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th { background-color: #f2f2f2; text-align: left; padding: 12px 8px; border: 1px solid #ddd; }
-            td { padding: 8px; border: 1px solid #ddd; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>${language === 'fr' ? 'Demande d\'estimation' : 'Estimate Request'}</h1>
-            <p>${language === 'fr' ? 'Cher(e)' : 'Dear'} ${email},</p>
-            <p>${language === 'fr' 
-              ? 'Nous avons bien reçu votre demande d\'estimation. Notre équipe la traitera dans les plus brefs délais et vous contactera avec une estimation détaillée.' 
-              : 'We have received your estimate request. Our team will process it shortly and contact you with a detailed estimate.'}</p>
-            
-            <h2>${language === 'fr' ? 'Détails de la demande' : 'Request Details'}</h2>
-            <p><strong>${language === 'fr' ? 'Numéro de référence' : 'Reference Number'}:</strong> ${estimate.id}</p>
-            <p><strong>${language === 'fr' ? 'Date de la demande' : 'Request Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString()}</p>
-            
-            <h3>${language === 'fr' ? 'Articles' : 'Items'}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>${language === 'fr' ? 'Produit' : 'Product'}</th>
-                  <th>${language === 'fr' ? 'Quantité' : 'Quantity'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsList}
-              </tbody>
-            </table>
-            
-            <h3>${language === 'fr' ? 'Adresse de livraison' : 'Shipping Address'}</h3>
-            <p>${estimate.shipping_address}</p>
-            
-            <p>${language === 'fr' 
-              ? 'Nous vous remercions d\'avoir choisi Meubles Karim. Si vous avez des questions, n\'hésitez pas à nous contacter.' 
-              : 'Thank you for choosing Meubles Karim. If you have any questions, please don\'t hesitate to contact us.'}</p>
-            
-            <p>${language === 'fr' ? 'Cordialement,' : 'Sincerely,'}<br>L'équipe Meubles Karim</p>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // For this demo, we'll just log the email we would have sent
-    console.log(`Would send email to: ${email}`);
-    console.log(`Subject: ${emailSubject}`);
-    console.log(`Content: ${emailContent}`);
-
-    // In a real application, you would send the email here using a service like SendGrid, Mailgun, etc.
-    // For now, we'll just simulate success
-
-    return new Response(
-      JSON.stringify({ success: true, message: "Estimate email sent successfully" }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    
   } catch (error) {
     console.error("Error in send-estimate function:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }), 
+      { 
+        status: 500, 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders 
+        } 
       }
     );
   }
-});
+};
+
+// Start the server
+serve(handler);
