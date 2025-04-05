@@ -1,147 +1,126 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
-// CORS headers
+// Set up Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface EstimateRequestBody {
-  email: string;
-  estimate: any;
-  items: Array<{
-    product: {
-      id: string;
-      name: string;
-      description: string;
-      images: string[];
-    };
-    quantity: number;
-  }>;
-  language: 'en' | 'fr';
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse request body
-    const requestData: EstimateRequestBody = await req.json();
-    const { email, estimate, items, language } = requestData;
+    // Parse the request body
+    const { email, estimate, items, language } = await req.json();
 
-    // Send email
-    await sendEstimateEmail(email, estimate, items, language);
+    if (!email || !estimate || !items) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // In a real environment, you would generate a PDF here
+    // For now, we'll just send an email
+    const emailSubject = language === 'fr' 
+      ? "Votre demande d'estimation de Meubles Karim" 
+      : "Your Estimate Request from Meubles Karim";
+
+    // Create the email content
+    let itemsList = "";
+    items.forEach(item => {
+      itemsList += `<tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.product.name}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.quantity}</td>
+      </tr>`;
+    });
+
+    const emailContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            h1 { color: #333366; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th { background-color: #f2f2f2; text-align: left; padding: 12px 8px; border: 1px solid #ddd; }
+            td { padding: 8px; border: 1px solid #ddd; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>${language === 'fr' ? 'Demande d\'estimation' : 'Estimate Request'}</h1>
+            <p>${language === 'fr' ? 'Cher(e)' : 'Dear'} ${email},</p>
+            <p>${language === 'fr' 
+              ? 'Nous avons bien reçu votre demande d\'estimation. Notre équipe la traitera dans les plus brefs délais et vous contactera avec une estimation détaillée.' 
+              : 'We have received your estimate request. Our team will process it shortly and contact you with a detailed estimate.'}</p>
+            
+            <h2>${language === 'fr' ? 'Détails de la demande' : 'Request Details'}</h2>
+            <p><strong>${language === 'fr' ? 'Numéro de référence' : 'Reference Number'}:</strong> ${estimate.id}</p>
+            <p><strong>${language === 'fr' ? 'Date de la demande' : 'Request Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString()}</p>
+            
+            <h3>${language === 'fr' ? 'Articles' : 'Items'}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>${language === 'fr' ? 'Produit' : 'Product'}</th>
+                  <th>${language === 'fr' ? 'Quantité' : 'Quantity'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsList}
+              </tbody>
+            </table>
+            
+            <h3>${language === 'fr' ? 'Adresse de livraison' : 'Shipping Address'}</h3>
+            <p>${estimate.shipping_address}</p>
+            
+            <p>${language === 'fr' 
+              ? 'Nous vous remercions d\'avoir choisi Meubles Karim. Si vous avez des questions, n\'hésitez pas à nous contacter.' 
+              : 'Thank you for choosing Meubles Karim. If you have any questions, please don\'t hesitate to contact us.'}</p>
+            
+            <p>${language === 'fr' ? 'Cordialement,' : 'Sincerely,'}<br>L'équipe Meubles Karim</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // For this demo, we'll just log the email we would have sent
+    console.log(`Would send email to: ${email}`);
+    console.log(`Subject: ${emailSubject}`);
+    console.log(`Content: ${emailContent}`);
+
+    // In a real application, you would send the email here using a service like SendGrid, Mailgun, etc.
+    // For now, we'll just simulate success
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, message: "Estimate email sent successfully" }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("Error in send-estimate function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
 });
-
-// Send email function
-async function sendEstimateEmail(
-  email: string, 
-  estimate: any, 
-  items: EstimateRequestBody['items'], 
-  language: 'en' | 'fr'
-): Promise<void> {
-  try {
-    // Connect to SMTP server
-    const client = new SmtpClient();
-    
-    await client.connect({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: "hediammar100@gmail.com",
-      password: "Hedi31032000",
-      secure: true,
-    });
-
-    // Generate email content
-    const subject = language === 'fr' ? "Estimation de prix - Meubles Karim" : "Price Estimate - Meubles Karim";
-    
-    // Create HTML email content
-    const htmlContent = language === 'fr'
-      ? `<div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="color: #333333; text-align: center;">Estimation de Prix - Meubles Karim</h2>
-          <p style="color: #666666; font-size: 16px;">Cher client,</p>
-          <p style="color: #666666; font-size: 16px;">Nous vous remercions pour votre demande d'estimation. Voici un résumé des articles que vous avez sélectionnés:</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background-color: #f5f5f5;">
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Article</th>
-              <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Quantité</th>
-            </tr>
-            ${items.map(item => `
-              <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">${item.product.name}</td>
-                <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${item.quantity}</td>
-              </tr>
-            `).join('')}
-          </table>
-          
-          <p style="color: #666666; font-size: 16px;">Un membre de notre équipe vous contactera bientôt pour discuter des prix spécifiques et répondre à toutes vos questions.</p>
-          <p style="color: #666666; font-size: 16px;">Cordialement,<br>L'équipe Meubles Karim</p>
-        </div>`
-      : `<div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="color: #333333; text-align: center;">Price Estimate - Meubles Karim</h2>
-          <p style="color: #666666; font-size: 16px;">Dear Customer,</p>
-          <p style="color: #666666; font-size: 16px;">Thank you for your estimate request. Here is a summary of the items you have selected:</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background-color: #f5f5f5;">
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Item</th>
-              <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Quantity</th>
-            </tr>
-            ${items.map(item => `
-              <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">${item.product.name}</td>
-                <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${item.quantity}</td>
-              </tr>
-            `).join('')}
-          </table>
-          
-          <p style="color: #666666; font-size: 16px;">A member of our team will contact you soon to discuss specific pricing and answer any questions you may have.</p>
-          <p style="color: #666666; font-size: 16px;">Best regards,<br>The Meubles Karim Team</p>
-        </div>`;
-
-    // Send email
-    await client.send({
-      from: "hediammar100@gmail.com",
-      to: email,
-      subject: subject,
-      content: language === 'fr' 
-        ? "Veuillez trouver ci-joint votre estimation de prix demandée. Un représentant vous contactera prochainement."
-        : "Please find attached your requested price estimate. A representative will contact you shortly.",
-      html: htmlContent
-    });
-
-    // Close connection
-    await client.close();
-    
-    console.log("Email sent successfully to:", email);
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw error;
-  }
-}

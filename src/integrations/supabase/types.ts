@@ -33,6 +33,45 @@ export type Database = {
         }
         Relationships: []
       }
+      estimates: {
+        Row: {
+          contact_email: string
+          contact_phone: string
+          created_at: string | null
+          id: string
+          items: Json
+          shipping_address: Json
+          status: string
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          contact_email: string
+          contact_phone: string
+          created_at?: string | null
+          id?: string
+          items: Json
+          shipping_address: Json
+          status?: string
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string | null
+          id?: string
+          items?: Json
+          shipping_address?: Json
+          status?: string
+          total_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       hero_content: {
         Row: {
           background_image: string | null

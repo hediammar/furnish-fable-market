@@ -35,7 +35,7 @@ const checkoutFormSchema = z.object({
 type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 const Checkout: React.FC = () => {
-  const { cartItems, clearCart, totalPrice } = useCart();
+  const { cartItems, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,13 +58,13 @@ const Checkout: React.FC = () => {
     try {
       const { data, error } = await supabase.from('estimates').insert({
         user_id: user?.id,
-        total_amount: totalPrice,
+        total_amount: 0, // Price on request, so we don't include actual totals
         status: 'pending',
         shipping_address: `${formData.address}, ${formData.city}, ${formData.zipCode}, ${formData.country}`,
         items: cartItems.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          price: item.product.price
+          name: item.product.name
         })),
         contact_email: formData.email,
         contact_phone: formData.phone

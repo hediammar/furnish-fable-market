@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { formatPrice } from '@/utils/currencyUtils';
@@ -168,7 +167,7 @@ export const fetchRelatedProducts = async (productId: string, category: string):
   }
 };
 
-// Add the deleteProduct function that was missing
+// Add the deleteProduct function
 export const deleteProduct = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
@@ -186,7 +185,7 @@ export const deleteProduct = async (id: string): Promise<void> => {
   }
 };
 
-// Add the createProduct function that was missing
+// Add the createProduct function
 export const createProduct = async (product: Omit<Product, 'id'>): Promise<Product | null> => {
   try {
     const { data, error } = await supabase
