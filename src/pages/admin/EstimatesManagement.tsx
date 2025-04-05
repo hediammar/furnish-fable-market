@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -8,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -47,13 +47,38 @@ const EstimatesManagement: React.FC = () => {
 
   // Update estimate status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: Estimate['status'] }) =>
-      updateEstimateStatus(id, status),
+    mutationFn: async ({ id, status }: { id: string; status: Estimate['status'] }) => {
+      // First update the status in the database
+      await updateEstimateStatus(id, status);
+      
+      // Then notify the customer via email
+      try {
+        const { error } = await supabase.functions.invoke('notify-estimate-status', {
+          body: { id, status },
+        });
+        
+        if (error) {
+          console.error('Error sending notification:', error);
+          throw error;
+        }
+      } catch (error) {
+        console.error('Failed to send notification:', error);
+        // We don't throw the error here to avoid preventing the status update
+        // but we do log it and show a toast
+        toast({
+          title: 'Warning',
+          description: 'Status updated but notification email could not be sent.',
+          variant: 'warning',
+        });
+      }
+      
+      return { id, status };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'estimates'] });
       toast({
         title: 'Status updated',
-        description: 'The estimate status has been successfully updated.',
+        description: 'The estimate status has been successfully updated and customer notified.',
       });
     },
     onError: (error) => {

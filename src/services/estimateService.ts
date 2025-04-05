@@ -20,7 +20,7 @@ export interface Estimate {
 }
 
 export const fetchEstimates = async (): Promise<Estimate[]> => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('estimates')
     .select('*')
     .order('created_at', { ascending: false });
@@ -37,7 +37,7 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
 };
 
 export const fetchEstimateById = async (id: string): Promise<Estimate> => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('estimates')
     .select('*')
     .eq('id', id)
@@ -55,7 +55,7 @@ export const fetchEstimateById = async (id: string): Promise<Estimate> => {
 };
 
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<void> => {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('estimates')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', id);
@@ -67,7 +67,7 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
 };
 
 export const deleteEstimate = async (id: string): Promise<void> => {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('estimates')
     .delete()
     .eq('id', id);

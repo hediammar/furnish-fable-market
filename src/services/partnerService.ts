@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Partner, PartnerDB } from '@/types/partner';
 
 export const fetchPartners = async (): Promise<Partner[]> => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('partners')
     .select('*')
     .order('name');
@@ -17,7 +17,7 @@ export const fetchPartners = async (): Promise<Partner[]> => {
 };
 
 export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' | 'updated_at'>): Promise<Partner> => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('partners')
     .insert(partner)
     .select()
@@ -32,7 +32,7 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
 };
 
 export const updatePartner = async (id: string, partner: Partial<Partner>): Promise<Partner> => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('partners')
     .update(partner)
     .eq('id', id)
@@ -48,7 +48,7 @@ export const updatePartner = async (id: string, partner: Partial<Partner>): Prom
 };
 
 export const deletePartner = async (id: string): Promise<void> => {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('partners')
     .delete()
     .eq('id', id);

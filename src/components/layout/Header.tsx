@@ -59,12 +59,10 @@ const Header: React.FC = () => {
     <header className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
       <div className="container-custom">
         <div className="flex items-center justify-between py-4">
-          {/* Logo */}
           <Link to="/" className="font-serif text-2xl sm:text-3xl font-bold text-furniture-brown">
             Meubles <span className="font-light">Karim</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/" className="nav-link text-sm font-medium flex items-center gap-1">
               <Home size={18} />
@@ -112,29 +110,6 @@ const Header: React.FC = () => {
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
-                
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-9 px-3 text-sm">
-                    <Package size={18} className="mr-1" />
-                    {t('categories')}
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid gap-3 p-4 w-[200px]">
-                      {categories.map((category) => (
-                        <li key={category.id}>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                              className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            >
-                              <div className="text-sm font-medium leading-none">{category.name}</div>
-                            </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
             
@@ -149,7 +124,6 @@ const Header: React.FC = () => {
             </Link>
           </nav>
 
-          {/* Icons */}
           <div className="flex items-center space-x-4">
             <LanguageSwitcher />
             
@@ -221,7 +195,6 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border animate-fade-in">
             <nav className="flex flex-col space-y-4">
@@ -318,7 +291,6 @@ const Header: React.FC = () => {
         )}
       </div>
 
-      {/* Cart Sidebar */}
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   );

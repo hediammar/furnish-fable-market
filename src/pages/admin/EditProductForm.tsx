@@ -122,23 +122,26 @@ const EditProductForm: React.FC = () => {
           // Save the raw DB data
           setDbProduct(data as DBProduct);
           
-          // Convert to app product format
+          // Convert to app product format with explicit mapping
           const appProduct = mapDatabaseProductToAppProduct(data);
+          
+          // Set the product state with the converted data
           setProduct(appProduct);
           setImages(appProduct.images || []);
           
+          // Set form values
           form.reset({
             name: appProduct.name,
             description: appProduct.description || '',
             price: appProduct.price,
             stock: appProduct.stock || 0,
-            inStock: appProduct.inStock,
-            category: appProduct.category || '',
+            inStock: Boolean(appProduct.inStock),
+            category: appProduct.category || undefined,
             material: appProduct.material || '',
             dimensions: appProduct.dimensions || '',
-            featured: appProduct.featured || false,
-            new: appProduct.new || false,
-            color: data.colors && data.colors[0] ? data.colors[0] : '#000000',
+            featured: Boolean(appProduct.featured),
+            new: Boolean(appProduct.new),
+            color: (data.colors && data.colors[0]) ? data.colors[0] : '#000000',
           });
         }
       } catch (error) {
@@ -331,14 +334,13 @@ const EditProductForm: React.FC = () => {
                 <div>
                   <Label htmlFor="category">Category</Label>
                   <Select
-                    value={form.watch('category')}
+                    value={form.watch('category') || undefined}
                     onValueChange={(value) => form.setValue('category', value)}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.name}>
                           {category.name}
