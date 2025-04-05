@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/types/product';
-import { formatPrice } from '@/utils/currencyUtils';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +12,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
+  const { language } = useLanguage();
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,12 +52,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="absolute top-3 left-3 flex space-x-2">
           {product.new && (
             <span className="bg-furniture-teal text-white text-xs font-bold px-2 py-1 rounded">
-              NEW
+              {language === 'fr' ? 'NOUVEAU' : 'NEW'}
             </span>
           )}
           {product.featured && (
             <span className="bg-furniture-orange text-white text-xs font-bold px-2 py-1 rounded">
-              FEATURED
+              {language === 'fr' ? 'EN VEDETTE' : 'FEATURED'}
             </span>
           )}
         </div>
@@ -72,9 +73,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {product.category}
           </p>
           <div className="flex justify-between items-center">
-            <span className="font-semibold">{formatPrice(product.price)}</span>
+            <span className="font-semibold">{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
             {!product.inStock && (
-              <span className="text-destructive text-sm">Out of stock</span>
+              <span className="text-destructive text-sm">{language === 'fr' ? 'Rupture de stock' : 'Out of stock'}</span>
             )}
           </div>
         </Link>

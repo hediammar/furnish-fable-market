@@ -7,12 +7,13 @@ export interface Product {
   images: string[];
   category: string;
   material?: string;
-  dimensions?: string; // Changed from object to string to match Supabase schema
+  dimensions?: string;
   inStock: boolean;
-  stock?: number; // Added to match what's used in ProductsManagement.tsx
+  stock?: number;
   featured?: boolean;
   new?: boolean;
-  discount?: number; // Added discount field
+  discount?: number;
+  formattedPrice?: string; // Added formattedPrice property
 }
 
 export interface CartItem {

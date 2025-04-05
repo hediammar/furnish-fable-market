@@ -11,7 +11,7 @@ export interface NewsletterSubscriber {
 export interface Newsletter {
   id?: string;
   subject: string;
-  content: any; // Changed from string to any to match the jsonb type in Supabase
+  content: any; // Change from string to any to match jsonb type in Supabase
   preheader?: string;
   sent_at?: string;
   created_at?: string;

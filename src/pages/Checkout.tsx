@@ -9,12 +9,11 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { formatPrice } from '@/utils/currencyUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Form,
   FormControl,
@@ -41,6 +40,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { language } = useLanguage();
   
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -54,9 +54,9 @@ const Checkout: React.FC = () => {
     },
   });
 
-  const createOrder = async (formData: CheckoutFormValues) => {
+  const createEstimate = async (formData: CheckoutFormValues) => {
     try {
-      const { data, error } = await supabase.from('orders').insert({
+      const { data, error } = await supabase.from('estimates').insert({
         user_id: user?.id,
         total_amount: totalPrice,
         status: 'pending',
@@ -71,13 +71,37 @@ const Checkout: React.FC = () => {
       }).select();
       
       if (error) {
-        console.error('Error creating order:', error);
+        console.error('Error creating estimate:', error);
         throw error;
       }
       
+      await sendEstimateEmail(formData.email, data[0]);
+      
       return data[0];
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('Error creating estimate:', error);
+      throw error;
+    }
+  };
+
+  const sendEstimateEmail = async (email: string, estimateData: any) => {
+    try {
+      // Call edge function to send email
+      const { error } = await supabase.functions.invoke('send-estimate', {
+        body: { 
+          email,
+          estimate: estimateData,
+          items: cartItems,
+          language
+        }
+      });
+      
+      if (error) {
+        console.error('Error sending estimate email:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error sending estimate email:', error);
       throw error;
     }
   };
@@ -86,8 +110,8 @@ const Checkout: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Create order in database
-      const orderData = await createOrder(data);
+      // Create estimate in database
+      await createEstimate(data);
       
       // Clear cart
       clearCart();
@@ -96,15 +120,19 @@ const Checkout: React.FC = () => {
       navigate('/checkout/success');
       
       toast({
-        title: "Order placed",
-        description: "Your order has been successfully placed!",
+        title: language === 'fr' ? "Estimation envoyée" : "Estimate sent",
+        description: language === 'fr' 
+          ? "Votre demande d'estimation a été envoyée avec succès! Vérifiez votre email." 
+          : "Your estimate request has been successfully sent! Check your email.",
       });
     } catch (error) {
-      console.error('Error processing order:', error);
+      console.error('Error processing estimate:', error);
       setIsProcessing(false);
       toast({
-        title: "Error",
-        description: "There was a problem processing your order. Please try again.",
+        title: language === 'fr' ? "Erreur" : "Error",
+        description: language === 'fr'
+          ? "Un problème est survenu lors du traitement de votre demande. Veuillez réessayer."
+          : "There was a problem processing your request. Please try again.",
         variant: "destructive",
       });
     }
@@ -113,18 +141,22 @@ const Checkout: React.FC = () => {
   return (
     <div className="container mx-auto py-12 px-4">
       <Helmet>
-        <title>Checkout | Meubles Karim</title>
-        <meta name="description" content="Secure checkout page for Meubles Karim" />
+        <title>{language === 'fr' ? 'Demande d\'estimation | Meubles Karim' : 'Request Estimate | Meubles Karim'}</title>
+        <meta name="description" content={language === 'fr' ? 'Demandez une estimation pour vos meubles' : 'Request an estimate for your furniture'} />
       </Helmet>
       
-      <h1 className="font-serif text-3xl font-medium mb-8">Checkout</h1>
+      <h1 className="font-serif text-3xl font-medium mb-8">
+        {language === 'fr' ? 'Demande d\'estimation' : 'Request Estimate'}
+      </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Checkout Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Shipping Information</CardTitle>
-            <CardDescription>Enter your shipping details</CardDescription>
+            <CardTitle>{language === 'fr' ? 'Informations de livraison' : 'Shipping Information'}</CardTitle>
+            <CardDescription>
+              {language === 'fr' ? 'Entrez vos coordonnées pour recevoir une estimation' : 'Enter your details to receive an estimate'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -134,7 +166,7 @@ const Checkout: React.FC = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Email' : 'Email'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -148,7 +180,7 @@ const Checkout: React.FC = () => {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Numéro de téléphone' : 'Phone Number'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -162,7 +194,7 @@ const Checkout: React.FC = () => {
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Adresse' : 'Address'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -176,7 +208,7 @@ const Checkout: React.FC = () => {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Ville' : 'City'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -190,7 +222,7 @@ const Checkout: React.FC = () => {
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zip Code</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Code postal' : 'Zip Code'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -204,7 +236,7 @@ const Checkout: React.FC = () => {
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel>{language === 'fr' ? 'Pays' : 'Country'}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -214,7 +246,9 @@ const Checkout: React.FC = () => {
                 />
                 
                 <Button type="submit" disabled={isProcessing} className="w-full">
-                  {isProcessing ? 'Processing...' : 'Place Order'}
+                  {isProcessing 
+                    ? (language === 'fr' ? 'Traitement en cours...' : 'Processing...') 
+                    : (language === 'fr' ? 'Demander une estimation' : 'Request Estimate')}
                 </Button>
               </form>
             </Form>
@@ -224,27 +258,29 @@ const Checkout: React.FC = () => {
         {/* Order Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-            <CardDescription>Review your order details</CardDescription>
+            <CardTitle>{language === 'fr' ? 'Résumé de la commande' : 'Order Summary'}</CardTitle>
+            <CardDescription>
+              {language === 'fr' ? 'Vérifiez les détails de votre commande' : 'Review your order details'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
               {cartItems.map((item) => (
                 <li key={item.product.id} className="flex justify-between">
                   <span>{item.product.name} x {item.quantity}</span>
-                  <span>{formatPrice(item.product.price * item.quantity)}</span>
+                  <span>{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
                 </li>
               ))}
             </ul>
             <Separator className="my-4" />
             <div className="flex justify-between font-medium">
-              <span>Total</span>
-              <span>{formatPrice(totalPrice)}</span>
+              <span>{language === 'fr' ? 'Total' : 'Total'}</span>
+              <span>{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
             </div>
           </CardContent>
           <CardFooter>
             <Button variant="secondary" onClick={() => navigate('/cart')}>
-              Back to Cart
+              {language === 'fr' ? 'Retour au panier' : 'Back to Cart'}
             </Button>
           </CardFooter>
         </Card>

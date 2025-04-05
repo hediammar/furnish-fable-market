@@ -3,6 +3,7 @@ import React from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { CartItem as CartItemType } from '@/types/product';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CartItemProps {
   item: CartItemType;
@@ -10,17 +11,8 @@ interface CartItemProps {
 
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const { removeFromCart, updateCartItemQuantity } = useCart();
+  const { language } = useLanguage();
   const { product, quantity } = item;
-
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(product.price);
-
-  const formattedSubtotal = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(product.price * quantity);
 
   const incrementQuantity = () => {
     updateCartItemQuantity(product.id, quantity + 1);
@@ -57,7 +49,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
             <X size={16} />
           </button>
         </div>
-        <p className="text-sm text-muted-foreground mb-2">{formattedPrice}</p>
+        <p className="text-sm text-muted-foreground mb-2">{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</p>
 
         {/* Quantity Controls */}
         <div className="flex items-center">
@@ -78,7 +70,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
               <Plus size={14} />
             </button>
           </div>
-          <span className="ml-auto font-medium text-sm">{formattedSubtotal}</span>
+          <span className="ml-auto font-medium text-sm">{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
         </div>
       </div>
     </div>

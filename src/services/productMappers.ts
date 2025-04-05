@@ -4,6 +4,14 @@ import { formatPrice } from '@/utils/currencyUtils';
 
 // Map database product to our app's Product type
 export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
+  // Calculate if product is in stock
+  const inStock = dbProduct.stock !== null && dbProduct.stock > 0;
+  
+  // Calculate final price after discount
+  const finalPrice = dbProduct.discount 
+    ? dbProduct.price * (1 - dbProduct.discount / 100)
+    : dbProduct.price;
+  
   return {
     id: dbProduct.id,
     name: dbProduct.name,
@@ -13,11 +21,11 @@ export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
     category: dbProduct.category || '',
     material: dbProduct.material,
     dimensions: dbProduct.dimensions,
-    inStock: dbProduct.stock > 0,
+    inStock: inStock,
     stock: dbProduct.stock || 0,
     featured: dbProduct.is_featured || false,
     new: dbProduct.is_new || false,
     discount: dbProduct.discount || 0,
-    formattedPrice: formatPrice(dbProduct.price)
+    formattedPrice: formatPrice(finalPrice)
   };
 };

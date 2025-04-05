@@ -4,7 +4,7 @@ import { Product } from '@/types/product';
 import { formatPrice } from '@/utils/currencyUtils';
 import { mapDatabaseProductToAppProduct } from '@/services/productMappers';
 
-// Define the filter options locally to avoid circular imports
+// Define the filter options interface
 export interface ProductFilterOptions {
   category?: string;
   search?: string;
@@ -13,6 +13,8 @@ export interface ProductFilterOptions {
   sortBy?: string;
   minPrice?: number;
   maxPrice?: number;
+  materials?: string[]; // Added materials property
+  colors?: string[];
 }
 
 export const fetchProducts = async (options: ProductFilterOptions = {}): Promise<Product[]> => {
@@ -38,6 +40,14 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
     
     if (options.maxPrice !== undefined) {
       query = query.lte('price', options.maxPrice);
+    }
+    
+    if (options.materials && options.materials.length > 0) {
+      query = query.in('material', options.materials);
+    }
+    
+    if (options.colors && options.colors.length > 0) {
+      query = query.contains('colors', options.colors);
     }
     
     // Apply sorting

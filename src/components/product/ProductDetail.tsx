@@ -4,6 +4,7 @@ import { Minus, Plus, Check, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/types/product';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductDetailProps {
   product: Product;
@@ -13,27 +14,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
+  const { language } = useLanguage();
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
   };
-
-  // Calculate the final price after discount
-  const finalPrice = product.discount 
-    ? product.price * (1 - product.discount / 100)
-    : product.price;
-
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(finalPrice);
-
-  const formattedOriginalPrice = product.discount 
-    ? new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(product.price)
-    : null;
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -83,36 +68,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
             </div>
 
             <div className="flex items-center">
-              <div className="text-2xl font-semibold">{formattedPrice}</div>
-              {product.discount && formattedOriginalPrice && (
-                <>
-                  <div className="text-lg text-muted-foreground line-through ml-4">
-                    {formattedOriginalPrice}
-                  </div>
-                  <div className="ml-4 bg-red-100 text-red-800 px-2 py-0.5 rounded text-sm font-medium">
-                    {product.discount}% OFF
-                  </div>
-                </>
-              )}
+              <div className="text-2xl font-semibold">{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</div>
             </div>
 
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="font-medium">Description</h3>
+              <h3 className="font-medium">{language === 'fr' ? 'Description' : 'Description'}</h3>
               <p className="text-muted-foreground">{product.description}</p>
             </div>
 
             {product.material && (
               <div className="space-y-2">
-                <h3 className="font-medium">Material</h3>
+                <h3 className="font-medium">{language === 'fr' ? 'Matériau' : 'Material'}</h3>
                 <p className="text-muted-foreground">{product.material}</p>
               </div>
             )}
 
             {product.dimensions && (
               <div className="space-y-2">
-                <h3 className="font-medium">Dimensions</h3>
+                <h3 className="font-medium">{language === 'fr' ? 'Dimensions' : 'Dimensions'}</h3>
                 <p className="text-muted-foreground">
                   {product.dimensions}
                 </p>
@@ -123,7 +98,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
             <div className="space-y-4">
               <div className="flex items-center">
-                <span className="mr-4">Quantity:</span>
+                <span className="mr-4">{language === 'fr' ? 'Quantité:' : 'Quantity:'}</span>
                 <div className="flex items-center border border-border rounded-md">
                   <button
                     className="px-3 py-2 text-muted-foreground hover:text-foreground"
@@ -152,17 +127,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 {product.inStock ? (
                   <>
                     <ShoppingCart size={18} className="mr-2" />
-                    Add to Cart
+                    {language === 'fr' ? 'Ajouter au panier' : 'Add to Cart'}
                   </>
                 ) : (
-                  'Out of Stock'
+                  language === 'fr' ? 'Rupture de stock' : 'Out of Stock'
                 )}
               </button>
 
               {product.inStock && (
                 <div className="flex items-center text-green-600">
                   <Check size={16} className="mr-2" />
-                  <span>In stock and ready to ship</span>
+                  <span>{language === 'fr' ? 'En stock et prêt à être expédié' : 'In stock and ready to ship'}</span>
                 </div>
               )}
             </div>
