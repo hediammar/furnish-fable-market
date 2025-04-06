@@ -1,11 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Partner, PartnerDB } from '@/types/partner';
+import { Partner } from '@/types/partner';
 
 export const fetchPartners = async (): Promise<Partner[]> => {
-  // Using type assertion to tell TypeScript this is a valid table
+  // Using any type to bypass TypeScript checking since the partners table exists in the database
+  // but might not be properly typed in the generated TypeScript definitions
   const { data, error } = await supabase
-    .from('partners' as any)
+    .from('partners')
     .select('*')
     .order('name');
 
@@ -19,7 +20,7 @@ export const fetchPartners = async (): Promise<Partner[]> => {
 
 export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' | 'updated_at'>): Promise<Partner> => {
   const { data, error } = await supabase
-    .from('partners' as any)
+    .from('partners')
     .insert(partner)
     .select()
     .single();
@@ -34,7 +35,7 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
 
 export const updatePartner = async (id: string, partner: Partial<Partner>): Promise<Partner> => {
   const { data, error } = await supabase
-    .from('partners' as any)
+    .from('partners')
     .update(partner)
     .eq('id', id)
     .select()
@@ -50,7 +51,7 @@ export const updatePartner = async (id: string, partner: Partial<Partner>): Prom
 
 export const deletePartner = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('partners' as any)
+    .from('partners')
     .delete()
     .eq('id', id);
 
