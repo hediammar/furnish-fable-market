@@ -7,7 +7,7 @@ import FeaturedProducts from '@/components/home/FeaturedProducts';
 import CategorySection from '@/components/home/CategorySection';
 import ReviewsCarousel from '@/components/home/ReviewsCarousel';
 import NewsletterSection from '@/components/home/NewsletterSection';
-import PartnersGrid from '@/components/home/PartnersGrid';
+import PartnersCarousel from '@/components/home/PartnersCarousel';
 import { fetchProducts } from '@/services/productService';
 import { fetchCategories } from '@/services/categoryService';
 import { fetchPartners } from '@/services/partnerService';
@@ -65,7 +65,7 @@ const Index: React.FC = () => {
         categories={categories.slice(0, 3)} 
       />
       
-      <PartnersGrid partners={partners} />
+      <PartnersCarousel partners={partners} />
       
       <ReviewsCarousel />
       

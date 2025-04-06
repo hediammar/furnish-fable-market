@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Package, ShoppingBag, Users, Tag, LayoutDashboard, LogOut, Image, Mail } from 'lucide-react';
+import { Package, ShoppingBag, Users, Tag, LayoutDashboard, LogOut, Image, Mail, FileText, Briefcase } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,8 @@ const AdminDashboard = () => {
     { title: 'Users', icon: <Users size={20} />, path: '/admin/users' },
     { title: 'Hero Sections', icon: <Image size={20} />, path: '/admin/hero' },
     { title: 'Newsletter', icon: <Mail size={20} />, path: '/admin/newsletter' },
+    { title: 'Partners', icon: <Briefcase size={20} />, path: '/admin/partners' },
+    { title: 'Estimates', icon: <FileText size={20} />, path: '/admin/estimates' },
   ];
   
   return (
