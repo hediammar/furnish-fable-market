@@ -1,11 +1,15 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { Resend } from "npm:resend@2.0.0";
 
 // Set up Supabase client
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") || "");
+const senderEmail = "hediammar100@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,10 +60,33 @@ serve(async (req) => {
       );
     }
 
-    // In a real application, you would now send emails to all subscribers
-    // For this demo, we'll just log the action and update the newsletter's sent_at field
+    // In a real application, send emails to all subscribers using Resend
     console.log(`Newsletter "${newsletter.subject}" would be sent to ${subscribers.length} subscribers`);
-    console.log("Newsletter content:", newsletter.content);
+    
+    // Format the newsletter content (transform from JSON if needed)
+    let htmlContent = "";
+    if (typeof newsletter.content === 'string') {
+      htmlContent = newsletter.content;
+    } else {
+      // If it's structured content, render it as HTML (simplified)
+      htmlContent = `<h1>${newsletter.subject}</h1><div>${JSON.stringify(newsletter.content)}</div>`;
+    }
+    
+    // Send a test email to confirm functionality - just for logging/testing
+    try {
+      const emailResponse = await resend.emails.send({
+        from: `Meubles Karim <${senderEmail}>`,
+        to: [senderEmail], // Send a copy to the sender for testing
+        subject: `[TEST] ${newsletter.subject}`,
+        html: htmlContent,
+      });
+      
+      console.log("Test email sent:", emailResponse);
+    } catch (emailError) {
+      console.error("Error sending test email:", emailError);
+    }
+    
+    // Log info about subscribers
     console.log("Subscribers:", subscribers.map(s => s.email).join(", "));
 
     // Update the newsletter to mark it as sent

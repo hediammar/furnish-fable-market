@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -50,7 +51,10 @@ const EstimatesManagement: React.FC = () => {
     if (error) {
       console.error('Error fetching estimates:', error);
     }
-  }, [error]);
+    if (estimates && estimates.length > 0) {
+      console.log('Estimates loaded successfully:', estimates);
+    }
+  }, [error, estimates]);
 
   // Update estimate status mutation
   const updateStatusMutation = useMutation({

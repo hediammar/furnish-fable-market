@@ -35,19 +35,45 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
     console.log('Fetched estimates data:', data);
 
     // Properly parse and transform the data
-    return (data || []).map((estimate: any) => ({
-      ...estimate,
-      status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
-      // Parse JSON data if stored as strings
-      items: typeof estimate.items === 'string' 
-        ? JSON.parse(estimate.items) 
-        : Array.isArray(estimate.items) 
-          ? estimate.items 
-          : [],
-      shipping_address: typeof estimate.shipping_address === 'string' 
-        ? JSON.parse(estimate.shipping_address) 
-        : estimate.shipping_address
-    })) as Estimate[];
+    return (data || []).map((estimate: any) => {
+      // Parse JSON fields if needed
+      let parsedItems = estimate.items;
+      let parsedAddress = estimate.shipping_address;
+      
+      try {
+        // If items is a string, try to parse it
+        if (typeof parsedItems === 'string') {
+          parsedItems = JSON.parse(parsedItems);
+        }
+        
+        // If the parsed result is not an array, ensure it is
+        if (!Array.isArray(parsedItems)) {
+          console.warn('Items is not an array:', parsedItems);
+          parsedItems = [];
+        }
+        
+        // Handle shipping_address parsing
+        if (typeof parsedAddress === 'string') {
+          try {
+            parsedAddress = JSON.parse(parsedAddress);
+          } catch (e) {
+            // If it can't be parsed as JSON, use it as is (string address)
+            console.log('Using shipping_address as string');
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing JSON data:', error);
+        parsedItems = Array.isArray(estimate.items) ? estimate.items : [];
+        parsedAddress = estimate.shipping_address;
+      }
+      
+      return {
+        ...estimate,
+        status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
+        items: parsedItems,
+        shipping_address: parsedAddress
+      };
+    }) as Estimate[];
   } catch (error) {
     console.error('Error in fetchEstimates:', error);
     return [];
@@ -55,26 +81,59 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
 };
 
 export const fetchEstimateById = async (id: string): Promise<Estimate> => {
-  const { data, error } = await supabase
-    .from('estimates')
-    .select('*')
-    .eq('id', id)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  if (error) {
-    console.error('Error fetching estimate:', error);
+    if (error) {
+      console.error('Error fetching estimate:', error);
+      throw error;
+    }
+
+    // Parse JSON fields if needed
+    let parsedItems = data.items;
+    let parsedAddress = data.shipping_address;
+    
+    try {
+      // If items is a string, try to parse it
+      if (typeof parsedItems === 'string') {
+        parsedItems = JSON.parse(parsedItems);
+      }
+      
+      // If the parsed result is not an array, ensure it is
+      if (!Array.isArray(parsedItems)) {
+        console.warn('Items is not an array:', parsedItems);
+        parsedItems = [];
+      }
+      
+      // Handle shipping_address parsing
+      if (typeof parsedAddress === 'string') {
+        try {
+          parsedAddress = JSON.parse(parsedAddress);
+        } catch (e) {
+          // If it can't be parsed as JSON, use it as is (string address)
+          console.log('Using shipping_address as string');
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing JSON data:', error);
+      parsedItems = Array.isArray(data.items) ? data.items : [];
+      parsedAddress = data.shipping_address;
+    }
+    
+    return {
+      ...data,
+      status: data.status as 'pending' | 'approved' | 'rejected' | 'completed',
+      items: parsedItems,
+      shipping_address: parsedAddress
+    } as Estimate;
+  } catch (error) {
+    console.error('Error in fetchEstimateById:', error);
     throw error;
   }
-
-  // Properly cast and parse JSON data
-  return {
-    ...data,
-    status: data.status as 'pending' | 'approved' | 'rejected' | 'completed',
-    items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items,
-    shipping_address: typeof data.shipping_address === 'string' 
-      ? JSON.parse(data.shipping_address) 
-      : data.shipping_address
-  } as Estimate;
 };
 
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<void> => {
@@ -116,19 +175,45 @@ export const fetchUserEstimates = async (userId: string): Promise<Estimate[]> =>
     }
 
     // Properly parse and transform the data
-    return (data || []).map((estimate: any) => ({
-      ...estimate,
-      status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
-      // Parse JSON data if stored as strings
-      items: typeof estimate.items === 'string' 
-        ? JSON.parse(estimate.items) 
-        : Array.isArray(estimate.items) 
-          ? estimate.items 
-          : [],
-      shipping_address: typeof estimate.shipping_address === 'string' 
-        ? JSON.parse(estimate.shipping_address) 
-        : estimate.shipping_address
-    })) as Estimate[];
+    return (data || []).map((estimate: any) => {
+      // Parse JSON fields if needed
+      let parsedItems = estimate.items;
+      let parsedAddress = estimate.shipping_address;
+      
+      try {
+        // If items is a string, try to parse it
+        if (typeof parsedItems === 'string') {
+          parsedItems = JSON.parse(parsedItems);
+        }
+        
+        // If the parsed result is not an array, ensure it is
+        if (!Array.isArray(parsedItems)) {
+          console.warn('Items is not an array:', parsedItems);
+          parsedItems = [];
+        }
+        
+        // Handle shipping_address parsing
+        if (typeof parsedAddress === 'string') {
+          try {
+            parsedAddress = JSON.parse(parsedAddress);
+          } catch (e) {
+            // If it can't be parsed as JSON, use it as is (string address)
+            console.log('Using shipping_address as string');
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing JSON data:', error);
+        parsedItems = Array.isArray(estimate.items) ? estimate.items : [];
+        parsedAddress = estimate.shipping_address;
+      }
+      
+      return {
+        ...estimate,
+        status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
+        items: parsedItems,
+        shipping_address: parsedAddress
+      };
+    }) as Estimate[];
   } catch (error) {
     console.error('Error in fetchUserEstimates:', error);
     return [];
