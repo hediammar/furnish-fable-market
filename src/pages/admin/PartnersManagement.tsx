@@ -1,25 +1,18 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { fetchPartners, createPartner, updatePartner, deletePartner } from '@/services/partnerService';
 import { Partner } from '@/types/partner';
-import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogClose
-} from '@/components/ui/dialog';
-import { 
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Edit, Trash2, Plus, Link, Image, Save, X } from 'lucide-react';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,20 +23,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Edit, Plus, Trash2, Globe, ExternalLink } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const PartnersManagement: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [currentPartner, setCurrentPartner] = useState<Partner | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<Partner, 'id' | 'created_at' | 'updated_at'>>({
     name: '',
     logo: '',
     website: '',
-    description: ''
+    description: '',
   });
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,45 +57,82 @@ const PartnersManagement: React.FC = () => {
 
   // Create partner mutation
   const createPartnerMutation = useMutation({
-    mutationFn: createPartner,
+    mutationFn: async (partnerData: Omit<Partner, 'id' | 'created_at' | 'updated_at'>) => {
+      // If there's a logo file, upload it first
+      if (logoFile) {
+        const fileName = `partner-logo-${Date.now()}.${logoFile.name.split('.').pop()}`;
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('partners')
+          .upload(fileName, logoFile);
+          
+        if (uploadError) {
+          console.error('Error uploading logo:', uploadError);
+          throw uploadError;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('partners')
+          .getPublicUrl(fileName);
+          
+        partnerData.logo = urlData.publicUrl;
+      }
+      
+      return createPartner(partnerData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
-      toast({
-        title: 'Partner added',
-        description: 'The partner has been successfully added.',
-      });
-      resetForm();
+      toast({ title: 'Success', description: 'Partner has been created successfully' });
       setIsAddDialogOpen(false);
+      resetForm();
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to add the partner.',
-        variant: 'destructive',
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to create partner', 
+        variant: 'destructive' 
       });
-    },
+      console.error('Create partner error:', error);
+    }
   });
 
   // Update partner mutation
   const updatePartnerMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Partner> }) => 
-      updatePartner(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Partner> }) => {
+      // If there's a logo file, upload it first
+      if (logoFile) {
+        const fileName = `partner-logo-${Date.now()}.${logoFile.name.split('.').pop()}`;
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('partners')
+          .upload(fileName, logoFile);
+          
+        if (uploadError) {
+          console.error('Error uploading logo:', uploadError);
+          throw uploadError;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('partners')
+          .getPublicUrl(fileName);
+          
+        data.logo = urlData.publicUrl;
+      }
+      
+      return updatePartner(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
-      toast({
-        title: 'Partner updated',
-        description: 'The partner has been successfully updated.',
-      });
-      resetForm();
+      toast({ title: 'Success', description: 'Partner has been updated successfully' });
       setIsEditDialogOpen(false);
+      resetForm();
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to update the partner.',
-        variant: 'destructive',
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to update partner', 
+        variant: 'destructive' 
       });
-    },
+      console.error('Update partner error:', error);
+    }
   });
 
   // Delete partner mutation
@@ -101,18 +140,16 @@ const PartnersManagement: React.FC = () => {
     mutationFn: deletePartner,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
-      toast({
-        title: 'Partner deleted',
-        description: 'The partner has been successfully deleted.',
-      });
+      toast({ title: 'Success', description: 'Partner has been deleted successfully' });
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete the partner.',
-        variant: 'destructive',
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to delete partner', 
+        variant: 'destructive' 
       });
-    },
+      console.error('Delete partner error:', error);
+    }
   });
 
   const resetForm = () => {
@@ -120,44 +157,50 @@ const PartnersManagement: React.FC = () => {
       name: '',
       logo: '',
       website: '',
-      description: ''
+      description: '',
     });
-    setCurrentPartner(null);
+    setLogoFile(null);
+    setLogoPreview(null);
+    setSelectedPartnerId(null);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddPartner = () => {
     createPartnerMutation.mutate(formData);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentPartner) return;
-    
-    updatePartnerMutation.mutate({
-      id: currentPartner.id,
-      data: formData
-    });
+  const handleUpdatePartner = () => {
+    if (selectedPartnerId) {
+      updatePartnerMutation.mutate({
+        id: selectedPartnerId,
+        data: formData
+      });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deletePartnerMutation.mutate(id);
-  };
-
-  const openEditDialog = (partner: Partner) => {
-    setCurrentPartner(partner);
+  const handleEditClick = (partner: Partner) => {
     setFormData({
       name: partner.name,
       logo: partner.logo,
       website: partner.website || '',
-      description: partner.description || ''
+      description: partner.description || '',
     });
+    setLogoPreview(partner.logo);
+    setSelectedPartnerId(partner.id);
     setIsEditDialogOpen(true);
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      
+      // Create a preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLogoPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -168,252 +211,295 @@ const PartnersManagement: React.FC = () => {
       
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-serif font-medium">Partners Management</h1>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus size={16} className="mr-2" /> Add Partner
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Partner</DialogTitle>
-              <DialogDescription>
-                Add a new partner to showcase on the website.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAddSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Partner Name *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="logo">Logo URL *</Label>
-                  <Input
-                    id="logo"
-                    name="logo"
-                    value={formData.logo}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="https://example.com/logo.png"
-                  />
-                  {formData.logo && (
-                    <div className="flex justify-center mt-2">
-                      <img
-                        src={formData.logo}
-                        alt="Preview"
-                        className="h-16 w-16 object-contain rounded-full border p-1"
-                        onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/100?text=Invalid+URL')}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="website">Website URL</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline" type="button">Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={createPartnerMutation.isPending}>
-                  {createPartnerMutation.isPending ? 'Saving...' : 'Save Partner'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus size={16} className="mr-2" /> Add Partner
+        </Button>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Partner List</CardTitle>
+          <CardTitle>Partners</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-6">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em]" role="status">
+            <div className="text-center py-8">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" role="status">
                 <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
               </div>
-              <p className="mt-2 text-muted-foreground">Loading partners...</p>
-            </div>
-          ) : partners.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-6">No partners found.</p>
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus size={16} className="mr-2" /> Add Your First Partner
-              </Button>
+              <p className="mt-4 text-muted-foreground">Loading partners...</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Logo</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Website</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {partners.map((partner) => (
-                  <TableRow key={partner.id}>
-                    <TableCell>
-                      <img
-                        src={partner.logo}
-                        alt={partner.name}
-                        className="h-10 w-10 rounded-full object-contain border p-1"
-                        onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Image')}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{partner.name}</TableCell>
-                    <TableCell>
-                      {partner.website ? (
-                        <a
-                          href={partner.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center text-blue-600 hover:underline"
-                        >
-                          <Globe size={14} className="mr-1" />
-                          Visit site
-                          <ExternalLink size={12} className="ml-1" />
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No website</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(partner)}>
-                          <Edit size={16} />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                              <Trash2 size={16} />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the partner "{partner.name}". This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-red-500 hover:bg-red-600"
-                                onClick={() => handleDelete(partner.id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Logo</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Website</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {partners.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No partners found. Add your first partner to get started.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    partners.map((partner) => (
+                      <TableRow key={partner.id}>
+                        <TableCell>
+                          <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
+                            <img src={partner.logo} alt={partner.name} className="max-w-full max-h-full object-contain p-1" />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{partner.name}</div>
+                        </TableCell>
+                        <TableCell>
+                          {partner.website ? (
+                            <a 
+                              href={partner.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center"
+                            >
+                              <Link size={14} className="mr-1" />
+                              Website
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">Not provided</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {partner.description ? (
+                            <div className="max-w-xs truncate">{partner.description}</div>
+                          ) : (
+                            <span className="text-muted-foreground">No description</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleEditClick(partner)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit size={16} />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the partner "{partner.name}". This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-500 hover:bg-red-600"
+                                    onClick={() => deletePartnerMutation.mutate(partner.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
       
-      {/* Edit Dialog */}
+      {/* Add Partner Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Partner</DialogTitle>
+            <DialogDescription>
+              Add a new partner to showcase on your website.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="logo" className="text-right">
+                Logo
+              </Label>
+              <div className="col-span-3 space-y-2">
+                <Input
+                  id="logo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="col-span-3"
+                  required
+                />
+                {logoPreview && (
+                  <div className="w-24 h-24 rounded-md bg-gray-50 p-2 flex items-center justify-center">
+                    <img src={logoPreview} alt="Logo preview" className="max-h-full max-w-full object-contain" />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="website" className="text-right">
+                Website
+              </Label>
+              <Input
+                id="website"
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData({...formData, website: e.target.value})}
+                className="col-span-3"
+                placeholder="https://example.com"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetForm();
+              setIsAddDialogOpen(false);
+            }}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleAddPartner} disabled={!formData.name || (!logoFile && !formData.logo)}>
+              <Save size={16} className="mr-2" /> Save Partner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Partner Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Partner</DialogTitle>
             <DialogDescription>
               Update partner information.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Partner Name *</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-logo">Logo URL *</Label>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-logo" className="text-right">
+                Logo
+              </Label>
+              <div className="col-span-3 space-y-2">
                 <Input
                   id="edit-logo"
-                  name="logo"
-                  value={formData.logo}
-                  onChange={handleInputChange}
-                  required
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="col-span-3"
                 />
-                {formData.logo && (
-                  <div className="flex justify-center mt-2">
-                    <img
-                      src={formData.logo}
-                      alt="Preview"
-                      className="h-16 w-16 object-contain rounded-full border p-1"
-                      onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/100?text=Invalid+URL')}
-                    />
+                {logoPreview && (
+                  <div className="w-24 h-24 rounded-md bg-gray-50 p-2 flex items-center justify-center">
+                    <img src={logoPreview} alt="Logo preview" className="max-h-full max-w-full object-contain" />
                   </div>
                 )}
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-website">Website URL</Label>
-                <Input
-                  id="edit-website"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                />
-              </div>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" type="button" onClick={resetForm}>Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={updatePartnerMutation.isPending}>
-                {updatePartnerMutation.isPending ? 'Updating...' : 'Update Partner'}
-              </Button>
-            </DialogFooter>
-          </form>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-website" className="text-right">
+                Website
+              </Label>
+              <Input
+                id="edit-website"
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData({...formData, website: e.target.value})}
+                className="col-span-3"
+                placeholder="https://example.com"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetForm();
+              setIsEditDialogOpen(false);
+            }}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleUpdatePartner} disabled={!formData.name}>
+              <Save size={16} className="mr-2" /> Update Partner
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

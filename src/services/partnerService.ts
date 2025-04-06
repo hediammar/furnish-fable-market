@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Partner, PartnerDB } from '@/types/partner';
 
 export const fetchPartners = async (): Promise<Partner[]> => {
+  // Using type assertion to tell TypeScript this is a valid table
   const { data, error } = await supabase
-    .from('partners')
+    .from('partners' as any)
     .select('*')
     .order('name');
 
@@ -18,7 +19,7 @@ export const fetchPartners = async (): Promise<Partner[]> => {
 
 export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' | 'updated_at'>): Promise<Partner> => {
   const { data, error } = await supabase
-    .from('partners')
+    .from('partners' as any)
     .insert(partner)
     .select()
     .single();
@@ -33,7 +34,7 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
 
 export const updatePartner = async (id: string, partner: Partial<Partner>): Promise<Partner> => {
   const { data, error } = await supabase
-    .from('partners')
+    .from('partners' as any)
     .update(partner)
     .eq('id', id)
     .select()
@@ -49,7 +50,7 @@ export const updatePartner = async (id: string, partner: Partial<Partner>): Prom
 
 export const deletePartner = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('partners')
+    .from('partners' as any)
     .delete()
     .eq('id', id);
 

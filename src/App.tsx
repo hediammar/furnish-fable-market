@@ -34,6 +34,8 @@ import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import NewsletterBuilder from "./pages/admin/NewsletterBuilder";
 import HeroManagement from "./pages/admin/HeroManagement";
+import PartnersManagement from "./pages/admin/PartnersManagement";
+import EstimatesManagement from "./pages/admin/EstimatesManagement";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,8 @@ const App = () => (
                       <Route path="users" element={<UsersManagement />} />
                       <Route path="newsletter" element={<NewsletterBuilder />} />
                       <Route path="hero" element={<HeroManagement />} />
+                      <Route path="partners" element={<PartnersManagement />} />
+                      <Route path="estimates" element={<EstimatesManagement />} />
                     </Route>
                   </Route>
                   

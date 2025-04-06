@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -68,7 +69,7 @@ const EstimatesManagement: React.FC = () => {
         toast({
           title: 'Warning',
           description: 'Status updated but notification email could not be sent.',
-          variant: 'warning',
+          variant: 'destructive', // Changed from 'warning' to 'destructive' as per allowed variants
         });
       }
       

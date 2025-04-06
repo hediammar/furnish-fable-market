@@ -30,9 +30,15 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
     throw error;
   }
 
+  // Properly cast the status field to ensure it's one of the allowed values
   return (data || []).map((estimate: any) => ({
     ...estimate,
-    status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed'
+    status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
+    // Parse JSON data if stored as strings
+    items: typeof estimate.items === 'string' ? JSON.parse(estimate.items) : estimate.items,
+    shipping_address: typeof estimate.shipping_address === 'string' 
+      ? JSON.parse(estimate.shipping_address) 
+      : estimate.shipping_address
   })) as Estimate[];
 };
 
@@ -48,9 +54,14 @@ export const fetchEstimateById = async (id: string): Promise<Estimate> => {
     throw error;
   }
 
+  // Properly cast and parse JSON data
   return {
     ...data,
-    status: data.status as 'pending' | 'approved' | 'rejected' | 'completed'
+    status: data.status as 'pending' | 'approved' | 'rejected' | 'completed',
+    items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items,
+    shipping_address: typeof data.shipping_address === 'string' 
+      ? JSON.parse(data.shipping_address) 
+      : data.shipping_address
   } as Estimate;
 };
 

@@ -1,15 +1,53 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getHeroContent } from '@/services/heroService';
+import { useLanguage } from '@/context/LanguageContext';
 
 const Hero: React.FC = () => {
+  const { language } = useLanguage();
+  const { data: heroContent, isLoading } = useQuery({
+    queryKey: ['heroContent', 'home', language],
+    queryFn: () => getHeroContent('home'),
+  });
+
+  // Default content as fallback
+  const defaultContent = {
+    title: language === 'fr' 
+      ? 'Mobilier élégant pour une vie moderne' 
+      : 'Elegant Furniture for Modern Living',
+    subtitle: language === 'fr'
+      ? 'Découvrez notre collection unique de meubles de haute qualité qui allient style, confort et savoir-faire.'
+      : 'Discover our curated collection of high-quality furniture that combines style, comfort, and craftsmanship.',
+    primary_button_text: language === 'fr' ? 'Acheter maintenant' : 'Shop Now',
+    primary_button_link: '/products',
+    secondary_button_text: language === 'fr' ? 'Notre histoire' : 'Our Story',
+    secondary_button_link: '/about',
+    background_image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80'
+  };
+
+  // Combine DB content with defaults for any missing fields
+  const content = heroContent ? {
+    ...defaultContent,
+    ...heroContent,
+    // Handle empty strings
+    title: heroContent.title || defaultContent.title,
+    subtitle: heroContent.subtitle || defaultContent.subtitle,
+    primary_button_text: heroContent.primary_button_text || defaultContent.primary_button_text,
+    primary_button_link: heroContent.primary_button_link || defaultContent.primary_button_link,
+    secondary_button_text: heroContent.secondary_button_text || defaultContent.secondary_button_text,
+    secondary_button_link: heroContent.secondary_button_link || defaultContent.secondary_button_link,
+    background_image: heroContent.background_image || defaultContent.background_image
+  } : defaultContent;
+
   return (
     <section className="relative h-[90vh] overflow-hidden">
       {/* Hero Image */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
+          src={content.background_image}
           alt="Elegant living room with modern furniture" 
           className="w-full h-full object-cover"
         />
@@ -17,20 +55,20 @@ const Hero: React.FC = () => {
       </div>
       
       {/* Content */}
-      <div className="container-custom relative z-10 h-full flex flex-col justify-center text-white">
+      <div className="container mx-auto px-4 relative z-10 h-full flex flex-col justify-center text-white">
         <div className="max-w-2xl animate-fade-in">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight mb-6">
-            Elegant Furniture for Modern Living
+            {content.title}
           </h1>
           <p className="text-lg md:text-xl mb-8 text-white/90 max-w-xl">
-            Discover our curated collection of high-quality furniture that combines style, comfort, and craftsmanship.
+            {content.subtitle}
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/products" className="bg-white text-furniture-brown hover:bg-furniture-taupe hover:text-white font-medium px-8 py-3 rounded-md transition-colors duration-300 flex items-center">
-              Shop Now <ArrowRight size={16} className="ml-2" />
+            <Link to={content.primary_button_link} className="bg-white text-gray-900 hover:bg-gray-200 font-medium px-8 py-3 rounded-md transition-colors duration-300 flex items-center">
+              {content.primary_button_text} <ArrowRight size={16} className="ml-2" />
             </Link>
-            <Link to="/about" className="bg-transparent border border-white text-white hover:bg-white/10 font-medium px-8 py-3 rounded-md transition-colors duration-300">
-              Our Story
+            <Link to={content.secondary_button_link} className="bg-transparent border border-white text-white hover:bg-white/10 font-medium px-8 py-3 rounded-md transition-colors duration-300">
+              {content.secondary_button_text}
             </Link>
           </div>
         </div>

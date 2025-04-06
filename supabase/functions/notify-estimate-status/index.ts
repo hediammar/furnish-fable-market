@@ -1,151 +1,105 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+type Status = "pending" | "approved" | "rejected" | "completed";
+
+interface RequestBody {
+  id: string;
+  status: Status;
 }
 
-export const handler = async (req: Request) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing environment variables' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { id, status } = await req.json();
-    
+    // Get the request body
+    const body: RequestBody = await req.json();
+    const { id, status } = body;
+
     if (!id || !status) {
       return new Response(
-        JSON.stringify({ error: 'Missing id or status in request body' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: "Missing required field id or status" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Fetch the estimate details
-    const { data: estimate, error: estimateError } = await supabase
-      .from('estimates')
-      .select('*')
-      .eq('id', id)
+    // Fetch the estimate details to get customer info
+    const { data: estimate, error: fetchError } = await supabase
+      .from("estimates")
+      .select("*")
+      .eq("id", id)
       .single();
-      
-    if (estimateError) {
-      console.error('Error fetching estimate:', estimateError);
+
+    if (fetchError) {
+      console.error("Error fetching estimate:", fetchError);
       return new Response(
-        JSON.stringify({ error: 'Estimate not found' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: "Estimate not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Send email notification
-    // Note: In a real implementation, you would use an email service like SendGrid, Mailgun, etc.
-    console.log(`Sending email notification for estimate ${id} with status ${status} to ${estimate.contact_email}`);
+    // For demonstration purposes, just log the notification
+    // In a real app, you would send an email or SMS to the customer
+    console.log(`Notifying customer ${estimate.contact_email} that their estimate ${id} is now ${status}`);
     
-    // Simulate email sending
-    const emailContent = createEmailContent(estimate, status);
+    // Here you would typically use a service like Resend, SendGrid, or Twilio
+    // to send emails or SMS notifications to the customer
+    
+    // Example email content based on status
+    let subject = "";
+    let message = "";
+    
+    switch (status) {
+      case "approved":
+        subject = "Your Estimate Has Been Approved!";
+        message = `Great news! Your estimate has been approved. You can now proceed with your order.`;
+        break;
+      case "rejected":
+        subject = "Update on Your Estimate Request";
+        message = `We're sorry, but your estimate has been declined. Please contact us for more information.`;
+        break;
+      case "completed":
+        subject = "Your Order is Complete!";
+        message = `We're happy to inform you that your order has been completed. Thank you for choosing us!`;
+        break;
+      case "pending":
+        subject = "Your Estimate is Pending Review";
+        message = `Your estimate is currently being reviewed by our team. We'll update you soon!`;
+        break;
+    }
 
-    // You would call your email service here
-    // For now, we're just logging the content
-    console.log(`Email content: ${emailContent}`);
+    // Here we would send the actual notification
+    // For now, just log it
+    console.log({
+      to: estimate.contact_email,
+      subject,
+      message,
+      status
+    });
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Notification sent for estimate ${id} with status ${status}` 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: true, message: "Notification sent successfully" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Error in notify-estimate-status function:', error);
-    
+    console.error("Error processing notification:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-};
-
-function createEmailContent(estimate: any, status: string): string {
-  let subject = '';
-  let bodyContent = '';
-  
-  switch (status) {
-    case 'approved':
-      subject = 'Your Estimate Has Been Approved';
-      bodyContent = `
-        <p>We're pleased to inform you that your estimate request has been approved.</p>
-        <p>Our team will be in touch with you shortly to discuss the next steps.</p>
-      `;
-      break;
-    case 'rejected':
-      subject = 'Update Regarding Your Estimate Request';
-      bodyContent = `
-        <p>Thank you for your interest in our products.</p>
-        <p>After reviewing your estimate request, we regret to inform you that we are unable to proceed with it at this time.</p>
-        <p>Please feel free to contact us if you have any questions or would like to discuss alternatives.</p>
-      `;
-      break;
-    case 'completed':
-      subject = 'Your Order Has Been Completed';
-      bodyContent = `
-        <p>We're happy to inform you that your order has been completed.</p>
-        <p>Thank you for choosing our services. We hope you're satisfied with your purchase.</p>
-      `;
-      break;
-    default:
-      subject = 'Update on Your Estimate Request';
-      bodyContent = `
-        <p>We have an update regarding your estimate request.</p>
-        <p>The current status is: ${status}</p>
-      `;
-  }
-  
-  return `
-    <html>
-      <head>
-        <title>${subject}</title>
-      </head>
-      <body>
-        <h1>${subject}</h1>
-        <p>Dear Customer,</p>
-        ${bodyContent}
-        <p>Estimate Details:</p>
-        <ul>
-          <li>Estimate ID: ${estimate.id}</li>
-          <li>Total Amount: $${estimate.total_amount}</li>
-          <li>Status: ${status}</li>
-        </ul>
-        <p>Thank you for choosing Meubles Karim!</p>
-        <p>Best regards,<br>The Meubles Karim Team</p>
-      </body>
-    </html>
-  `;
-}
-
-Deno.serve(handler);
+});
