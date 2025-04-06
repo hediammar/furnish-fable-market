@@ -7,12 +7,14 @@ import { Separator } from '@/components/ui/separator';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
 
 const Profile = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { language } = useLanguage();
   
   // Try to refresh the profile once when the component loads if it's null
   useEffect(() => {
@@ -93,11 +95,11 @@ const Profile = () => {
           </CardContent>
           <Separator />
           <CardFooter className="flex justify-between pt-6">
-            <Button variant="outline" onClick={() => navigate('/orders')}>
-              View My Orders
+            <Button variant="outline" onClick={() => navigate('/estimates')}>
+              {language === 'fr' ? 'Voir Mes Devis' : 'View My Estimates'}
             </Button>
             <Button variant="destructive" onClick={handleSignOut} disabled={isLoading}>
-              {isLoading ? 'Signing out...' : 'Sign Out'}
+              {isLoading ? 'Signing out...' : (language === 'fr' ? 'Se déconnecter' : 'Sign Out')}
             </Button>
           </CardFooter>
         </Card>

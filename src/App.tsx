@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import OrdersPage from "./pages/OrdersPage";
+import EstimatesPage from "./pages/EstimatesPage";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import About from "./pages/About";
@@ -67,6 +68,7 @@ const App = () => (
                   <Route element={<ProtectedRoute />}>
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/orders" element={<OrdersPage />} />
+                    <Route path="/estimates" element={<EstimatesPage />} />
                   </Route>
                   
                   {/* Protected Admin Routes */}

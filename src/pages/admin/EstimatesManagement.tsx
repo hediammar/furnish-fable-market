@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { fetchEstimates, updateEstimateStatus, deleteEstimate, Estimate } from '@/services/estimateService';
@@ -40,10 +40,17 @@ const EstimatesManagement: React.FC = () => {
   const { language } = useLanguage();
 
   // Fetch estimates
-  const { data: estimates = [], isLoading } = useQuery({
+  const { data: estimates = [], isLoading, error } = useQuery({
     queryKey: ['admin', 'estimates'],
     queryFn: fetchEstimates,
   });
+
+  // Log any errors for debugging
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching estimates:', error);
+    }
+  }, [error]);
 
   // Update estimate status mutation
   const updateStatusMutation = useMutation({
@@ -68,7 +75,7 @@ const EstimatesManagement: React.FC = () => {
         toast({
           title: 'Warning',
           description: 'Status updated but notification email could not be sent.',
-          variant: 'destructive', // Changed from 'warning' to 'destructive' as per allowed variants
+          variant: 'destructive',
         });
       }
       
@@ -82,6 +89,7 @@ const EstimatesManagement: React.FC = () => {
       });
     },
     onError: (error) => {
+      console.error('Error updating estimate status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update the estimate status.',
@@ -101,6 +109,7 @@ const EstimatesManagement: React.FC = () => {
       });
     },
     onError: (error) => {
+      console.error('Error deleting estimate:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete the estimate.',
@@ -125,11 +134,16 @@ const EstimatesManagement: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return formatDistanceToNow(date, { 
-      addSuffix: true,
-      locale: language === 'fr' ? fr : enUS
-    });
+    try {
+      const date = new Date(dateString);
+      return formatDistanceToNow(date, { 
+        addSuffix: true,
+        locale: language === 'fr' ? fr : enUS
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Invalid date';
+    }
   };
 
   const handleViewEstimate = (estimate: Estimate) => {
@@ -145,10 +159,14 @@ const EstimatesManagement: React.FC = () => {
     deleteEstimateMutation.mutate(id);
   };
 
-  const pendingEstimates = estimates.filter(e => e.status === 'pending');
-  const approvedEstimates = estimates.filter(e => e.status === 'approved');
-  const rejectedEstimates = estimates.filter(e => e.status === 'rejected');
-  const completedEstimates = estimates.filter(e => e.status === 'completed');
+  // We need to ensure estimates is an array
+  const estimatesArray = Array.isArray(estimates) ? estimates : [];
+  
+  // Filter estimates by status
+  const pendingEstimates = estimatesArray.filter(e => e.status === 'pending');
+  const approvedEstimates = estimatesArray.filter(e => e.status === 'approved');
+  const rejectedEstimates = estimatesArray.filter(e => e.status === 'rejected');
+  const completedEstimates = estimatesArray.filter(e => e.status === 'completed');
 
   const renderEstimateTable = (filteredEstimates: Estimate[]) => (
     <div className="rounded-md border">
@@ -287,6 +305,15 @@ const EstimatesManagement: React.FC = () => {
                 <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
               </div>
               <p className="mt-4 text-muted-foreground">Loading estimates...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              <AlertCircle className="mx-auto h-8 w-8" />
+              <p className="mt-4">Error loading estimates. Please try again.</p>
+            </div>
+          ) : estimatesArray.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No estimates found. Waiting for customers to submit requests.</p>
             </div>
           ) : (
             <Tabs defaultValue="pending">

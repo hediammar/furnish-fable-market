@@ -20,26 +20,38 @@ export interface Estimate {
 }
 
 export const fetchEstimates = async (): Promise<Estimate[]> => {
-  const { data, error } = await supabase
-    .from('estimates')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    console.log('Fetching estimates...');
+    const { data, error } = await supabase
+      .from('estimates')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching estimates:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching estimates:', error);
+      throw error;
+    }
+
+    console.log('Fetched estimates data:', data);
+
+    // Properly parse and transform the data
+    return (data || []).map((estimate: any) => ({
+      ...estimate,
+      status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
+      // Parse JSON data if stored as strings
+      items: typeof estimate.items === 'string' 
+        ? JSON.parse(estimate.items) 
+        : Array.isArray(estimate.items) 
+          ? estimate.items 
+          : [],
+      shipping_address: typeof estimate.shipping_address === 'string' 
+        ? JSON.parse(estimate.shipping_address) 
+        : estimate.shipping_address
+    })) as Estimate[];
+  } catch (error) {
+    console.error('Error in fetchEstimates:', error);
+    return [];
   }
-
-  // Properly cast the status field to ensure it's one of the allowed values
-  return (data || []).map((estimate: any) => ({
-    ...estimate,
-    status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
-    // Parse JSON data if stored as strings
-    items: typeof estimate.items === 'string' ? JSON.parse(estimate.items) : estimate.items,
-    shipping_address: typeof estimate.shipping_address === 'string' 
-      ? JSON.parse(estimate.shipping_address) 
-      : estimate.shipping_address
-  })) as Estimate[];
 };
 
 export const fetchEstimateById = async (id: string): Promise<Estimate> => {
@@ -86,5 +98,39 @@ export const deleteEstimate = async (id: string): Promise<void> => {
   if (error) {
     console.error('Error deleting estimate:', error);
     throw error;
+  }
+};
+
+// Function to fetch estimates for a specific user
+export const fetchUserEstimates = async (userId: string): Promise<Estimate[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user estimates:', error);
+      throw error;
+    }
+
+    // Properly parse and transform the data
+    return (data || []).map((estimate: any) => ({
+      ...estimate,
+      status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
+      // Parse JSON data if stored as strings
+      items: typeof estimate.items === 'string' 
+        ? JSON.parse(estimate.items) 
+        : Array.isArray(estimate.items) 
+          ? estimate.items 
+          : [],
+      shipping_address: typeof estimate.shipping_address === 'string' 
+        ? JSON.parse(estimate.shipping_address) 
+        : estimate.shipping_address
+    })) as Estimate[];
+  } catch (error) {
+    console.error('Error in fetchUserEstimates:', error);
+    return [];
   }
 };

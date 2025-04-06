@@ -45,6 +45,7 @@ const PartnersManagement: React.FC = () => {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,29 +56,77 @@ const PartnersManagement: React.FC = () => {
     queryFn: fetchPartners,
   });
 
+  // Upload logo to Supabase Storage
+  const uploadLogo = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    
+    try {
+      // Create a unique file name to avoid collisions
+      const fileName = `partner-logo-${Date.now()}.${file.name.split('.').pop()}`;
+
+      // Check if the 'partners' bucket exists, create it if it doesn't
+      const { data: buckets } = await supabase.storage.listBuckets();
+      
+      if (!buckets?.find(bucket => bucket.name === 'partners')) {
+        const { data, error } = await supabase.storage.createBucket('partners', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+        
+        if (error) {
+          console.error('Error creating bucket:', error);
+          throw error;
+        }
+      }
+      
+      // Upload the file
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('partners')
+        .upload(fileName, file, {
+          upsert: true,
+          cacheControl: '3600'
+        });
+        
+      if (uploadError) {
+        console.error('Error uploading logo:', uploadError);
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('partners')
+        .getPublicUrl(fileName);
+        
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error in logo upload process:', error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Create partner mutation
   const createPartnerMutation = useMutation({
     mutationFn: async (partnerData: Omit<Partner, 'id' | 'created_at' | 'updated_at'>) => {
+      let data = { ...partnerData };
+      
       // If there's a logo file, upload it first
       if (logoFile) {
-        const fileName = `partner-logo-${Date.now()}.${logoFile.name.split('.').pop()}`;
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('partners')
-          .upload(fileName, logoFile);
-          
-        if (uploadError) {
-          console.error('Error uploading logo:', uploadError);
-          throw uploadError;
+        try {
+          const publicUrl = await uploadLogo(logoFile);
+          data.logo = publicUrl;
+        } catch (error) {
+          toast({ 
+            title: 'Error', 
+            description: 'Failed to upload logo image', 
+            variant: 'destructive' 
+          });
+          throw error;
         }
-        
-        const { data: urlData } = supabase.storage
-          .from('partners')
-          .getPublicUrl(fileName);
-          
-        partnerData.logo = urlData.publicUrl;
       }
       
-      return createPartner(partnerData);
+      return createPartner(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
@@ -98,26 +147,24 @@ const PartnersManagement: React.FC = () => {
   // Update partner mutation
   const updatePartnerMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Partner> }) => {
+      let updatedData = { ...data };
+      
       // If there's a logo file, upload it first
       if (logoFile) {
-        const fileName = `partner-logo-${Date.now()}.${logoFile.name.split('.').pop()}`;
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('partners')
-          .upload(fileName, logoFile);
-          
-        if (uploadError) {
-          console.error('Error uploading logo:', uploadError);
-          throw uploadError;
+        try {
+          const publicUrl = await uploadLogo(logoFile);
+          updatedData.logo = publicUrl;
+        } catch (error) {
+          toast({ 
+            title: 'Error', 
+            description: 'Failed to upload logo image', 
+            variant: 'destructive' 
+          });
+          throw error;
         }
-        
-        const { data: urlData } = supabase.storage
-          .from('partners')
-          .getPublicUrl(fileName);
-          
-        data.logo = urlData.publicUrl;
       }
       
-      return updatePartner(id, data);
+      return updatePartner(id, updatedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
@@ -410,8 +457,16 @@ const PartnersManagement: React.FC = () => {
             }}>
               Cancel
             </Button>
-            <Button type="submit" onClick={handleAddPartner} disabled={!formData.name || (!logoFile && !formData.logo)}>
-              <Save size={16} className="mr-2" /> Save Partner
+            <Button 
+              type="submit" 
+              onClick={handleAddPartner} 
+              disabled={!formData.name || (!logoFile && !formData.logo) || isUploading}
+            >
+              {isUploading ? 'Uploading...' : (
+                <>
+                  <Save size={16} className="mr-2" /> Save Partner
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -496,8 +551,16 @@ const PartnersManagement: React.FC = () => {
             }}>
               Cancel
             </Button>
-            <Button type="submit" onClick={handleUpdatePartner} disabled={!formData.name}>
-              <Save size={16} className="mr-2" /> Update Partner
+            <Button 
+              type="submit" 
+              onClick={handleUpdatePartner} 
+              disabled={!formData.name || isUploading}
+            >
+              {isUploading ? 'Uploading...' : (
+                <>
+                  <Save size={16} className="mr-2" /> Update Partner
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
