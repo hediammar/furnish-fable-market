@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
-import { fetchEstimates, updateEstimateStatus, deleteEstimate, Estimate } from '@/services/estimateService';
+import { fetchEstimates, updateEstimateStatus, deleteEstimate, Estimate, getEstimatePreviewHtml } from '@/services/estimateService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -28,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, X, AlertCircle, Clock, Trash2, Eye, CheckCircle, Send } from 'lucide-react';
+import { Check, X, AlertCircle, Clock, Trash2, Eye, CheckCircle, Send, Printer, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/context/LanguageContext';
@@ -36,12 +37,14 @@ import { useLanguage } from '@/context/LanguageContext';
 const EstimatesManagement: React.FC = () => {
   const [viewingEstimate, setViewingEstimate] = useState<Estimate | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string>('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { language } = useLanguage();
 
   // Fetch estimates
-  const { data: estimates = [], isLoading, error } = useQuery({
+  const { data: estimates = [], isLoading, error, refetch } = useQuery({
     queryKey: ['admin', 'estimates'],
     queryFn: fetchEstimates,
   });
@@ -59,31 +62,36 @@ const EstimatesManagement: React.FC = () => {
   // Update estimate status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Estimate['status'] }) => {
-      // First update the status in the database
-      await updateEstimateStatus(id, status);
-      
-      // Then notify the customer via email
       try {
-        const { error } = await supabase.functions.invoke('notify-estimate-status', {
-          body: { id, status },
-        });
+        // First update the status in the database
+        const updatedEstimate = await updateEstimateStatus(id, status);
         
-        if (error) {
-          console.error('Error sending notification:', error);
-          throw error;
+        // Then notify the customer via email
+        try {
+          const { error } = await supabase.functions.invoke('notify-estimate-status', {
+            body: { id, status },
+          });
+          
+          if (error) {
+            console.error('Error sending notification:', error);
+            throw error;
+          }
+        } catch (error) {
+          console.error('Failed to send notification:', error);
+          // We don't throw the error here to avoid preventing the status update
+          // but we do log it and show a toast
+          toast({
+            title: 'Warning',
+            description: 'Status updated but notification email could not be sent.',
+            variant: 'destructive',
+          });
         }
+        
+        return updatedEstimate;
       } catch (error) {
-        console.error('Failed to send notification:', error);
-        // We don't throw the error here to avoid preventing the status update
-        // but we do log it and show a toast
-        toast({
-          title: 'Warning',
-          description: 'Status updated but notification email could not be sent.',
-          variant: 'destructive',
-        });
+        console.error('Error in updateStatusMutation:', error);
+        throw error;
       }
-      
-      return { id, status };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'estimates'] });
@@ -91,6 +99,7 @@ const EstimatesManagement: React.FC = () => {
         title: 'Status updated',
         description: 'The estimate status has been successfully updated and customer notified.',
       });
+      setIsViewDialogOpen(false);
     },
     onError: (error) => {
       console.error('Error updating estimate status:', error);
@@ -163,6 +172,96 @@ const EstimatesManagement: React.FC = () => {
     deleteEstimateMutation.mutate(id);
   };
 
+  const handlePreviewEstimate = async (estimate: Estimate) => {
+    try {
+      // Generate preview HTML
+      const productIds = estimate.items.map(item => item.product_id);
+      let items = estimate.items;
+      
+      if (productIds.length > 0) {
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, price, image')
+          .in('id', productIds);
+        
+        if (products && products.length > 0) {
+          items = estimate.items.map(item => {
+            const product = products.find(p => p.id === item.product_id);
+            return {
+              ...item,
+              product: product || { name: item.name }
+            };
+          });
+        }
+      }
+      
+      const html = getEstimatePreviewHtml(estimate, items);
+      setPreviewHtml(html);
+      setIsPreviewDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate estimate preview.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSendPreview = async (estimate: Estimate) => {
+    try {
+      // Get product details for the items in the estimate
+      const productIds = estimate.items.map(item => item.product_id);
+      
+      // Only fetch products if there are product IDs
+      let items = estimate.items;
+      
+      if (productIds.length > 0) {
+        const { data: products } = await supabase
+          .from('products')
+          .select('id, name, price, image')
+          .in('id', productIds);
+        
+        if (products && products.length > 0) {
+          // Enhance items with product details
+          items = estimate.items.map(item => {
+            const product = products.find(p => p.id === item.product_id);
+            return {
+              ...item,
+              product: product || { name: item.name }
+            };
+          });
+        }
+      }
+      
+      // Call the edge function to send the estimate preview
+      const { error } = await supabase.functions.invoke('send-estimate', {
+        body: { 
+          email: estimate.contact_email,
+          estimate,
+          items,
+          language: 'en' // Default to English, can be made dynamic
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Preview sent',
+        description: `Estimate preview sent to ${estimate.contact_email}`,
+      });
+    } catch (error) {
+      console.error('Error sending preview:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send estimate preview.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // We need to ensure estimates is an array
   const estimatesArray = Array.isArray(estimates) ? estimates : [];
   
@@ -210,6 +309,25 @@ const EstimatesManagement: React.FC = () => {
                     <Button variant="ghost" size="sm" onClick={() => handleViewEstimate(estimate)}>
                       <Eye size={16} />
                     </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                      onClick={() => handlePreviewEstimate(estimate)}
+                    >
+                      <Printer size={16} />
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => handleSendPreview(estimate)}
+                    >
+                      <Mail size={16} />
+                    </Button>
+                    
                     {estimate.status === 'pending' && (
                       <>
                         <Button 
@@ -287,6 +405,9 @@ const EstimatesManagement: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-serif font-medium">Estimates Management</h1>
         <div className="flex space-x-2">
+          <Button variant="outline" className="relative" onClick={() => refetch()}>
+            Refresh
+          </Button>
           <Button variant="outline" className="relative">
             Pending
             {pendingEstimates.length > 0 && (
@@ -448,7 +569,6 @@ const EstimatesManagement: React.FC = () => {
                         className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
                         onClick={() => {
                           handleUpdateStatus(viewingEstimate.id, 'rejected');
-                          setIsViewDialogOpen(false);
                         }}
                       >
                         <X size={16} className="mr-1" /> Reject
@@ -457,7 +577,6 @@ const EstimatesManagement: React.FC = () => {
                         className="bg-green-600 hover:bg-green-700 text-white"
                         onClick={() => {
                           handleUpdateStatus(viewingEstimate.id, 'approved');
-                          setIsViewDialogOpen(false);
                         }}
                       >
                         <Check size={16} className="mr-1" /> Approve
@@ -469,12 +588,30 @@ const EstimatesManagement: React.FC = () => {
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
                         handleUpdateStatus(viewingEstimate.id, 'completed');
-                        setIsViewDialogOpen(false);
                       }}
                     >
                       <CheckCircle size={16} className="mr-1" /> Mark as Completed
                     </Button>
                   )}
+                  
+                  <Button 
+                    variant="outline" 
+                    className="ml-2 border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+                    onClick={() => {
+                      setIsViewDialogOpen(false);
+                      handlePreviewEstimate(viewingEstimate);
+                    }}
+                  >
+                    <Printer size={16} className="mr-1" /> Preview
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                    onClick={() => handleSendPreview(viewingEstimate)}
+                  >
+                    <Send size={16} className="mr-1" /> Send Preview
+                  </Button>
                 </div>
                 
                 <Button 
@@ -486,6 +623,44 @@ const EstimatesManagement: React.FC = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Estimate preview dialog */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Estimate Preview</DialogTitle>
+            <DialogDescription>
+              PDF-like preview of the estimate
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <iframe 
+              srcDoc={previewHtml}
+              className="w-full border rounded-md" 
+              style={{ height: '70vh' }}
+            />
+          </div>
+          
+          <DialogFooter>
+            {viewingEstimate && (
+              <Button 
+                variant="outline" 
+                className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                onClick={() => viewingEstimate && handleSendPreview(viewingEstimate)}
+              >
+                <Send size={16} className="mr-1" /> Send to Customer
+              </Button>
+            )}
+            <Button 
+              variant="outline"
+              onClick={() => setIsPreviewDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

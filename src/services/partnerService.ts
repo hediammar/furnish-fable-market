@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Partner } from '@/types/partner';
+import { toast } from 'sonner';
 
 export const fetchPartners = async (): Promise<Partner[]> => {
   const { data, error } = await supabase
@@ -39,31 +40,47 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
     if (logoFile) {
       console.log('Uploading logo file:', logoFile.name);
       
-      // Generate a unique file name using timestamp and random string
-      const timestamp = new Date().getTime();
-      const randomString = Math.random().toString(36).substring(2, 10);
-      const fileExtension = logoFile.name.split('.').pop();
-      const fileName = `${timestamp}-${randomString}.${fileExtension}`;
+      // Check if bucket exists, if not we don't try to create it as we already did in the SQL migration
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const partnersBucketExists = buckets?.some(bucket => bucket.name === 'partners');
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('partners')
-        .upload(`logos/${fileName}`, logoFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (uploadError) {
-        console.error('Error uploading logo:', uploadError);
-        throw uploadError;
+      if (!partnersBucketExists) {
+        console.log('Partners bucket does not exist, using placeholder logo');
+        toast.error('Storage bucket not available. Using placeholder logo instead.');
+        logoUrl = 'https://via.placeholder.com/300x150?text=Partner+Logo';
+      } else {
+        // Generate a unique file name using timestamp and random string
+        const timestamp = new Date().getTime();
+        const randomString = Math.random().toString(36).substring(2, 10);
+        const fileExtension = logoFile.name.split('.').pop();
+        const fileName = `${timestamp}-${randomString}.${fileExtension}`;
+        
+        // Use a try-catch inside the main try block to handle storage errors gracefully
+        try {
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('partners')
+            .upload(`logos/${fileName}`, logoFile, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (uploadError) {
+            throw uploadError;
+          }
+          
+          // Get the public URL for the uploaded file
+          const { data: urlData } = await supabase.storage
+            .from('partners')
+            .getPublicUrl(`logos/${fileName}`);
+          
+          logoUrl = urlData.publicUrl;
+          console.log('Logo uploaded successfully:', logoUrl);
+        } catch (storageError) {
+          console.error('Error in logo upload:', storageError);
+          toast.error('Could not upload logo. Using placeholder instead.');
+          logoUrl = 'https://via.placeholder.com/300x150?text=Partner+Logo';
+        }
       }
-      
-      // Get the public URL for the uploaded file
-      const { data: urlData } = await supabase.storage
-        .from('partners')
-        .getPublicUrl(`logos/${fileName}`);
-      
-      logoUrl = urlData.publicUrl;
-      console.log('Logo uploaded successfully:', logoUrl);
     }
     
     // Create the partner record with the logo URL
@@ -100,24 +117,28 @@ export const updatePartner = async (id: string, partner: Partial<Partner>, logoF
       const fileExtension = logoFile.name.split('.').pop();
       const fileName = `${timestamp}-${randomString}.${fileExtension}`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('partners')
-        .upload(`logos/${fileName}`, logoFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (uploadError) {
-        console.error('Error uploading logo:', uploadError);
-        throw uploadError;
+      try {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('partners')
+          .upload(`logos/${fileName}`, logoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Get the public URL for the uploaded file
+        const { data: urlData } = await supabase.storage
+          .from('partners')
+          .getPublicUrl(`logos/${fileName}`);
+        
+        logoUrl = urlData.publicUrl;
+      } catch (storageError) {
+        console.error('Error uploading logo:', storageError);
+        toast.error('Could not upload new logo. Keeping existing one.');
       }
-      
-      // Get the public URL for the uploaded file
-      const { data: urlData } = await supabase.storage
-        .from('partners')
-        .getPublicUrl(`logos/${fileName}`);
-      
-      logoUrl = urlData.publicUrl;
     }
     
     // Update the partner record

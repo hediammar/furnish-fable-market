@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { Resend } from "npm:resend@2.0.0";
 
 // Define CORS headers
 const corsHeaders = {
@@ -8,10 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Initialize Supabase client
+// Initialize Supabase client and Resend
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") || "");
+const senderEmail = "hediammar100@gmail.com";
 
 interface EstimateRequestBody {
   email: string;
@@ -26,14 +29,16 @@ function generateEstimateHTML(estimate: any, items: any[], language: string): st
   
   const productsTable = items.map((item, index) => `
     <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${index + 1}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.product.name}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">${isEnglish ? 'Price on request' : 'Prix sur demande'}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${index + 1}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.name}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${isEnglish ? 'Price on request' : 'Prix sur demande'}</td>
     </tr>
   `).join('');
 
-  const addressParts = estimate.shipping_address.split(',').map((part: string) => part.trim());
+  const addressParts = typeof estimate.shipping_address === 'string' 
+    ? estimate.shipping_address.split(',').map((part: string) => part.trim())
+    : ['Address not available'];
   
   return `
   <!DOCTYPE html>
@@ -42,30 +47,44 @@ function generateEstimateHTML(estimate: any, items: any[], language: string): st
     <meta charset="UTF-8">
     <title>${isEnglish ? 'Estimate Request' : 'Demande d\'estimation'} - #${estimate.id.substring(0, 8)}</title>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Cormorant+Garamond:wght@400;500&display=swap');
+      
       body {
-        font-family: Arial, sans-serif;
+        font-family: 'Cormorant Garamond', serif;
         color: #333;
         line-height: 1.6;
+        background-color: #f9f8f6;
+        margin: 0;
+        padding: 0;
       }
       .container {
         max-width: 800px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 40px;
+        background-color: #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
       }
       .header {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #9F8E7D;
+        padding-bottom: 20px;
+        position: relative;
       }
       .header h1 {
         color: #9F8E7D;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
+        font-size: 32px;
+        font-weight: normal;
+        font-family: 'Playfair Display', serif;
       }
       .header p {
         color: #666;
-        font-size: 14px;
+        font-size: 16px;
       }
       .estimate-info {
-        margin-bottom: 30px;
+        margin-bottom: 40px;
         display: flex;
         justify-content: space-between;
       }
@@ -73,56 +92,107 @@ function generateEstimateHTML(estimate: any, items: any[], language: string): st
         width: 48%;
       }
       .section-title {
-        font-size: 16px;
-        font-weight: bold;
+        font-size: 20px;
+        font-weight: normal;
+        font-family: 'Playfair Display', serif;
         color: #9F8E7D;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
       }
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
+        margin-top: 30px;
       }
       th {
-        background-color: #f8f9fa;
-        padding: 10px;
+        background-color: #f8f6f2;
+        padding: 15px 10px;
         text-align: left;
-        font-weight: bold;
+        font-weight: normal;
         border-bottom: 2px solid #e2e8f0;
+        color: #9F8E7D;
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
       }
       .footer {
-        margin-top: 40px;
+        margin-top: 50px;
         text-align: center;
         font-size: 14px;
         color: #666;
         border-top: 1px solid #e2e8f0;
-        padding-top: 20px;
+        padding-top: 30px;
       }
       .note {
-        background-color: #f8f9fa;
-        padding: 15px;
+        background-color: #f8f6f2;
+        padding: 20px;
         border-radius: 5px;
-        margin-top: 30px;
+        margin-top: 40px;
+        border-left: 4px solid #9F8E7D;
       }
       .note p {
         margin: 0;
+      }
+      .logo {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .logo img {
+        max-width: 180px;
+      }
+      .stamp {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        transform: rotate(15deg);
+        color: rgba(159, 142, 125, 0.2);
+        border: 4px solid rgba(159, 142, 125, 0.2);
+        border-radius: 50%;
+        padding: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      strong {
+        color: #9F8E7D;
+        font-weight: 500;
+      }
+      .contact-button {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 25px;
+        background-color: #9F8E7D;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+      }
+      .contact-button:hover {
+        background-color: #8d7c6c;
       }
     </style>
   </head>
   <body>
     <div class="container">
+      <div class="stamp">${estimate.status.toUpperCase()}</div>
       <div class="header">
-        <h1>Meubles Karim</h1>
-        <p>${isEnglish ? 'Estimate Request' : 'Demande d\'estimation'} #${estimate.id.substring(0, 8)}</p>
+        <div class="logo">
+          <img src="https://via.placeholder.com/180x50?text=Meubles+Karim" alt="Meubles Karim Logo">
+        </div>
+        <h1>${isEnglish ? 'Luxury Furniture Estimate' : 'Estimation de Meubles de Luxe'}</h1>
+        <p>${isEnglish ? 'Exclusive Request' : 'Demande Exclusive'} #${estimate.id.substring(0, 8)}</p>
       </div>
       
       <div class="estimate-info">
         <div class="estimate-details">
           <div class="section-title">${isEnglish ? 'Estimate Details' : 'Détails de l\'estimation'}</div>
-          <p><strong>${isEnglish ? 'Date' : 'Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
-          <p><strong>${isEnglish ? 'Status' : 'Statut'}:</strong> ${estimate.status === 'pending' ? (isEnglish ? 'Pending' : 'En attente') : estimate.status}</p>
+          <p><strong>${isEnglish ? 'Date' : 'Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</p>
+          <p><strong>${isEnglish ? 'Status' : 'Statut'}:</strong> ${estimate.status === 'pending' ? (isEnglish ? 'Pending' : 'En attente') : estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}</p>
         </div>
         
         <div class="customer-details">
@@ -151,12 +221,18 @@ function generateEstimateHTML(estimate: any, items: any[], language: string): st
       </table>
       
       <div class="note">
-        <p><strong>${isEnglish ? 'Note' : 'Note'}:</strong> ${isEnglish ? 'We will contact you shortly with a detailed price estimate for the requested items.' : 'Nous vous contacterons prochainement avec une estimation détaillée des prix pour les articles demandés.'}</p>
+        <p><strong>${isEnglish ? 'Note' : 'Note'}:</strong> ${isEnglish ? 'We will contact you shortly with a detailed price estimate for the requested items. Our team of design experts is preparing a personalized quote for your consideration.' : 'Nous vous contacterons prochainement avec une estimation détaillée des prix pour les articles demandés. Notre équipe d\'experts en design prépare un devis personnalisé pour votre considération.'}</p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="mailto:contact@meubleskarim.com" class="contact-button">
+          ${isEnglish ? 'Contact Us' : 'Contactez-nous'}
+        </a>
       </div>
       
       <div class="footer">
         <p>Meubles Karim | Route Hammamet Nord vers Nabeul, Hammamet, Tunisia, 8050 | (+216) 72 260 360</p>
-        <p>${isEnglish ? 'Thank you for your interest in our products!' : 'Merci pour votre intérêt pour nos produits!'}</p>
+        <p>${isEnglish ? 'Thank you for your interest in our exclusive collection!' : 'Merci pour votre intérêt pour notre collection exclusive!'}</p>
       </div>
     </div>
   </body>
@@ -184,34 +260,20 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate HTML content for the email
     const htmlContent = generateEstimateHTML(estimate, items, language);
 
-    // Send email using Supabase Edge Function (call another service or smtp)
-    // Example using a mocked email service
+    // Send email using Resend
     const emailSubject = language === 'fr' 
       ? `Demande d'estimation #${estimate.id.substring(0, 8)} - Meubles Karim`
       : `Estimate Request #${estimate.id.substring(0, 8)} - Meubles Karim`;
-    
-    // This would be replaced with a real email sending implementation
-    // For now, we'll simulate a successful response
-    
-    // Note: In a real implementation, you would:
-    // 1. Use a service like SendGrid, Resend, SMTP client, etc.
-    // 2. Send an actual email with the HTML content
-    // 3. Return a proper response with the email service's response
-    
-    // Example: If using actual SMTP or email service
+
     try {
-      // This is where you'd implement the actual email sending
-      // For example:
-      // await sendEmail({
-      //   to: email,
-      //   subject: emailSubject,
-      //   html: htmlContent
-      // });
+      const emailResponse = await resend.emails.send({
+        from: `Meubles Karim <${senderEmail}>`,
+        to: [email],
+        subject: emailSubject,
+        html: htmlContent,
+      });
       
-      // For now, let's log the attempt
-      console.log("Would send email with subject:", emailSubject);
-      console.log("Email recipient:", email);
-      console.log("Email HTML length:", htmlContent.length);
+      console.log("Email sent successfully:", emailResponse);
       
       // Insert a record into a `email_logs` table to track the email
       const { error: logError } = await supabase
@@ -231,7 +293,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Estimate email would be sent (email sending simulation)" 
+          message: "Estimate email sent successfully" 
         }), 
         { 
           status: 200, 
