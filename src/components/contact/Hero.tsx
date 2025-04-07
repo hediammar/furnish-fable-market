@@ -3,6 +3,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getHeroContent } from '@/services/heroService';
 import { useLanguage } from '@/context/LanguageContext';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 const ContactHero: React.FC = () => {
   const { language } = useLanguage();
@@ -19,10 +21,10 @@ const ContactHero: React.FC = () => {
     subtitle: language === 'fr'
       ? 'Vous avez des questions ou besoin d\'assistance ? Nous sommes là pour vous aider.'
       : 'Have questions or need assistance? We\'re here to help.',
-    primary_button_text: '',
-    primary_button_link: '',
-    secondary_button_text: '',
-    secondary_button_link: '',
+    primary_button_text: language === 'fr' ? 'Nos produits' : 'Our Products',
+    primary_button_link: '/products',
+    secondary_button_text: language === 'fr' ? 'Notre histoire' : 'Our Story',
+    secondary_button_link: '/about',
     background_image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80'
   };
 
@@ -61,6 +63,21 @@ const ContactHero: React.FC = () => {
           <p className="text-lg md:text-xl mb-8 text-white/90 max-w-xl">
             {content.subtitle}
           </p>
+          
+          {content.primary_button_text && (
+            <div className="flex flex-wrap gap-4">
+              {content.primary_button_text && (
+                <Link to={content.primary_button_link} className="bg-white text-gray-900 hover:bg-gray-200 font-medium px-8 py-3 rounded-md transition-colors duration-300 flex items-center">
+                  {content.primary_button_text} <ArrowRight size={16} className="ml-2" />
+                </Link>
+              )}
+              {content.secondary_button_text && (
+                <Link to={content.secondary_button_link} className="bg-transparent border border-white text-white hover:bg-white/10 font-medium px-8 py-3 rounded-md transition-colors duration-300">
+                  {content.secondary_button_text}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

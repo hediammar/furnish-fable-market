@@ -3,6 +3,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getHeroContent } from '@/services/heroService';
 import { useLanguage } from '@/context/LanguageContext';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 const AboutHero: React.FC = () => {
   const { language } = useLanguage();
@@ -19,10 +21,10 @@ const AboutHero: React.FC = () => {
     subtitle: language === 'fr'
       ? 'Découvrez la passion et le savoir-faire derrière chaque meuble que nous créons.'
       : 'Discover the passion and craftsmanship behind every piece of furniture we create.',
-    primary_button_text: '',
-    primary_button_link: '',
-    secondary_button_text: '',
-    secondary_button_link: '',
+    primary_button_text: language === 'fr' ? 'Voir nos produits' : 'View our products',
+    primary_button_link: '/products',
+    secondary_button_text: language === 'fr' ? 'Contactez-nous' : 'Contact us',
+    secondary_button_link: '/contact',
     background_image: 'https://images.unsplash.com/photo-1616486029426-5aff36ecb6c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80'
   };
 
@@ -61,6 +63,21 @@ const AboutHero: React.FC = () => {
           <p className="text-lg md:text-xl mb-8 text-white/90 max-w-xl">
             {content.subtitle}
           </p>
+          
+          {content.primary_button_text && (
+            <div className="flex flex-wrap gap-4">
+              {content.primary_button_text && (
+                <Link to={content.primary_button_link} className="bg-white text-gray-900 hover:bg-gray-200 font-medium px-8 py-3 rounded-md transition-colors duration-300 flex items-center">
+                  {content.primary_button_text} <ArrowRight size={16} className="ml-2" />
+                </Link>
+              )}
+              {content.secondary_button_text && (
+                <Link to={content.secondary_button_link} className="bg-transparent border border-white text-white hover:bg-white/10 font-medium px-8 py-3 rounded-md transition-colors duration-300">
+                  {content.secondary_button_text}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

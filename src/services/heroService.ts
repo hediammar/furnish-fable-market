@@ -55,7 +55,7 @@ export const saveHeroContent = async (content: HeroContent): Promise<HeroContent
     
     if (existingData) {
       // Update existing content
-      result = await supabase
+      const { data, error } = await supabase
         .from('hero_content')
         .update({
           title: content.title,
@@ -68,10 +68,17 @@ export const saveHeroContent = async (content: HeroContent): Promise<HeroContent
         })
         .eq('id', existingData.id)
         .select('*')
-        .single();
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error updating hero content:', error);
+        throw error;
+      }
+      
+      result = { data, error };
     } else {
       // Insert new content
-      result = await supabase
+      const { data, error } = await supabase
         .from('hero_content')
         .insert({
           page: content.page,
@@ -84,7 +91,14 @@ export const saveHeroContent = async (content: HeroContent): Promise<HeroContent
           background_image: content.background_image
         })
         .select('*')
-        .single();
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error inserting hero content:', error);
+        throw error;
+      }
+      
+      result = { data, error };
     }
     
     if (result.error) {
