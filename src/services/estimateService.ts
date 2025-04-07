@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
@@ -136,11 +137,12 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
   console.log(`Updating estimate ${id} to status: ${status}`);
   
   try {
+    // Important fix: Use eq instead of match for UUID fields
     const { data, error } = await supabase
       .from('estimates')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select();
+      .select('*');
     
     if (error) {
       console.error('Error updating estimate status:', error);
@@ -148,10 +150,16 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
     }
     
     if (!data || data.length === 0) {
+      console.error('No data returned after update. ID may not exist:', id);
       throw new Error('No estimate found with the provided ID');
     }
     
-    return convertDbEstimateToEstimate(data[0] as EstimateFromDB);
+    // Handle both single object and array responses
+    const estimateData = Array.isArray(data) ? data[0] : data;
+    
+    console.log('Update successful, returned data:', estimateData);
+    
+    return convertDbEstimateToEstimate(estimateData as EstimateFromDB);
   } catch (error) {
     console.error('Error in updateEstimateStatus:', error);
     throw error;

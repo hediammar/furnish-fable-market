@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -59,10 +60,13 @@ const EstimatesManagement: React.FC = () => {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Estimate['status'] }) => {
       try {
+        console.log(`Starting mutation to update estimate ${id} to ${status}`);
         const updatedEstimate = await updateEstimateStatus(id, status);
         
         try {
-          const { error } = await supabase.functions.invoke('notify-estimate-status', {
+          // Add some logging to debug notification issues
+          console.log('Sending notification for status update:', { id, status });
+          const { data, error } = await supabase.functions.invoke('notify-estimate-status', {
             body: { id, status },
           });
           
@@ -70,6 +74,8 @@ const EstimatesManagement: React.FC = () => {
             console.error('Error sending notification:', error);
             throw error;
           }
+          
+          console.log('Notification sent successfully:', data);
         } catch (error) {
           console.error('Failed to send notification:', error);
           toast({
@@ -164,6 +170,7 @@ const EstimatesManagement: React.FC = () => {
   };
 
   const handleUpdateStatus = (id: string, status: Estimate['status']) => {
+    console.log(`Handling status update request for estimate ${id} to ${status}`);
     updateStatusMutation.mutate({ id, status });
   };
 
