@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -61,6 +60,14 @@ const EstimatesPage: React.FC = () => {
   const handleViewEstimate = (estimate: Estimate) => {
     setViewingEstimate(estimate);
     setIsViewDialogOpen(true);
+  };
+
+  const formatShippingAddress = (address: string | { street: string; city: string; state: string; zip: string; country: string; }): string => {
+    if (typeof address === 'string') {
+      return address;
+    } else {
+      return `${address.street || ''}\n${address.city || ''}, ${address.state || ''} ${address.zip || ''}\n${address.country || ''}`.trim();
+    }
   };
 
   if (!user) {
@@ -154,7 +161,6 @@ const EstimatesPage: React.FC = () => {
         </Card>
       </div>
       
-      {/* Estimate details dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -194,7 +200,9 @@ const EstimatesPage: React.FC = () => {
                   
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Shipping Address</h3>
-                    <p className="whitespace-pre-line">{viewingEstimate.shipping_address}</p>
+                    <p className="whitespace-pre-line">
+                      {formatShippingAddress(viewingEstimate.shipping_address)}
+                    </p>
                   </div>
                 </div>
               </div>

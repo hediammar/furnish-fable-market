@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -43,13 +42,11 @@ const EstimatesManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const { language } = useLanguage();
 
-  // Fetch estimates
   const { data: estimates = [], isLoading, error, refetch } = useQuery({
     queryKey: ['admin', 'estimates'],
     queryFn: fetchEstimates,
   });
 
-  // Log any errors for debugging
   useEffect(() => {
     if (error) {
       console.error('Error fetching estimates:', error);
@@ -59,14 +56,11 @@ const EstimatesManagement: React.FC = () => {
     }
   }, [error, estimates]);
 
-  // Update estimate status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Estimate['status'] }) => {
       try {
-        // First update the status in the database
         const updatedEstimate = await updateEstimateStatus(id, status);
         
-        // Then notify the customer via email
         try {
           const { error } = await supabase.functions.invoke('notify-estimate-status', {
             body: { id, status },
@@ -78,8 +72,6 @@ const EstimatesManagement: React.FC = () => {
           }
         } catch (error) {
           console.error('Failed to send notification:', error);
-          // We don't throw the error here to avoid preventing the status update
-          // but we do log it and show a toast
           toast({
             title: 'Warning',
             description: 'Status updated but notification email could not be sent.',
@@ -111,7 +103,6 @@ const EstimatesManagement: React.FC = () => {
     },
   });
 
-  // Delete estimate mutation
   const deleteEstimateMutation = useMutation({
     mutationFn: deleteEstimate,
     onSuccess: () => {
@@ -130,6 +121,14 @@ const EstimatesManagement: React.FC = () => {
       });
     },
   });
+
+  const formatShippingAddress = (address: string | { street: string; city: string; state: string; zip: string; country: string; }): string => {
+    if (typeof address === 'string') {
+      return address;
+    } else {
+      return `${address.street || ''}\n${address.city || ''}, ${address.state || ''} ${address.zip || ''}\n${address.country || ''}`.trim();
+    }
+  };
 
   const getStatusBadge = (status: Estimate['status']) => {
     switch (status) {
@@ -174,7 +173,6 @@ const EstimatesManagement: React.FC = () => {
 
   const handlePreviewEstimate = async (estimate: Estimate) => {
     try {
-      // Generate preview HTML
       const productIds = estimate.items.map(item => item.product_id);
       let items = estimate.items;
       
@@ -210,10 +208,8 @@ const EstimatesManagement: React.FC = () => {
 
   const handleSendPreview = async (estimate: Estimate) => {
     try {
-      // Get product details for the items in the estimate
       const productIds = estimate.items.map(item => item.product_id);
       
-      // Only fetch products if there are product IDs
       let items = estimate.items;
       
       if (productIds.length > 0) {
@@ -223,7 +219,6 @@ const EstimatesManagement: React.FC = () => {
           .in('id', productIds);
         
         if (products && products.length > 0) {
-          // Enhance items with product details
           items = estimate.items.map(item => {
             const product = products.find(p => p.id === item.product_id);
             return {
@@ -234,13 +229,12 @@ const EstimatesManagement: React.FC = () => {
         }
       }
       
-      // Call the edge function to send the estimate preview
       const { error } = await supabase.functions.invoke('send-estimate', {
         body: { 
           email: estimate.contact_email,
           estimate,
           items,
-          language: 'en' // Default to English, can be made dynamic
+          language: 'en'
         }
       });
       
@@ -262,10 +256,8 @@ const EstimatesManagement: React.FC = () => {
     }
   };
 
-  // We need to ensure estimates is an array
   const estimatesArray = Array.isArray(estimates) ? estimates : [];
   
-  // Filter estimates by status
   const pendingEstimates = estimatesArray.filter(e => e.status === 'pending');
   const approvedEstimates = estimatesArray.filter(e => e.status === 'approved');
   const rejectedEstimates = estimatesArray.filter(e => e.status === 'rejected');
@@ -482,7 +474,6 @@ const EstimatesManagement: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Estimate details dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -525,7 +516,9 @@ const EstimatesManagement: React.FC = () => {
                   
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Shipping Address</h3>
-                    <p className="whitespace-pre-line">{viewingEstimate.shipping_address}</p>
+                    <p className="whitespace-pre-line">
+                      {formatShippingAddress(viewingEstimate.shipping_address)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -626,7 +619,6 @@ const EstimatesManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Estimate preview dialog */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

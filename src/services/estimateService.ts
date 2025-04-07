@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Estimate {
   id: string;
@@ -25,6 +25,41 @@ export interface Estimate {
   updated_at?: string;
 }
 
+type EstimateFromDB = {
+  id: string;
+  user_id?: string;
+  items: Json;
+  shipping_address: Json;
+  contact_email: string;
+  contact_phone: string;
+  status: string;
+  total_amount?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+const convertDbEstimateToEstimate = (dbEstimate: EstimateFromDB): Estimate => {
+  const items = Array.isArray(dbEstimate.items) 
+    ? dbEstimate.items 
+    : (typeof dbEstimate.items === 'string' ? JSON.parse(dbEstimate.items as string) : []);
+  
+  let shippingAddress = dbEstimate.shipping_address;
+  if (typeof shippingAddress === 'string') {
+  } else if (typeof shippingAddress === 'object') {
+    const addr = shippingAddress as any;
+    shippingAddress = `${addr.street || ''}
+${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}
+${addr.country || ''}`.trim();
+  }
+  
+  return {
+    ...dbEstimate,
+    items: items as Estimate['items'],
+    shipping_address: shippingAddress as Estimate['shipping_address'],
+    status: dbEstimate.status as Estimate['status']
+  };
+};
+
 export const fetchEstimates = async (): Promise<Estimate[]> => {
   const { data, error } = await supabase
     .from('estimates')
@@ -38,28 +73,27 @@ export const fetchEstimates = async (): Promise<Estimate[]> => {
   
   console.log('Fetched estimates data:', data);
   
-  // Convert shipping_address to a consistent format
   if (data) {
-    return data.map(estimate => {
-      if (typeof estimate.shipping_address === 'string') {
-        console.log('Using shipping_address as string');
-        return estimate;
-      } else {
-        // Convert the shipping_address object to a formatted string if it's not already a string
-        if (estimate.shipping_address && typeof estimate.shipping_address === 'object') {
-          const addr = estimate.shipping_address as any;
-          const formattedAddress = `${addr.street || ''}
-${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}
-${addr.country || ''}`.trim();
-          
-          return {
-            ...estimate,
-            shipping_address: formattedAddress
-          };
-        }
-        return estimate;
-      }
-    });
+    return data.map(estimate => convertDbEstimateToEstimate(estimate as EstimateFromDB));
+  }
+  
+  return [];
+};
+
+export const fetchUserEstimates = async (userId: string): Promise<Estimate[]> => {
+  const { data, error } = await supabase
+    .from('estimates')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching user estimates:', error);
+    throw error;
+  }
+  
+  if (data) {
+    return data.map(estimate => convertDbEstimateToEstimate(estimate as EstimateFromDB));
   }
   
   return [];
@@ -77,7 +111,7 @@ export const fetchEstimateById = async (id: string): Promise<Estimate> => {
     throw error;
   }
   
-  return data;
+  return convertDbEstimateToEstimate(data as EstimateFromDB);
 };
 
 export const createEstimate = async (estimate: Omit<Estimate, 'id' | 'created_at' | 'updated_at' | 'status'>): Promise<Estimate> => {
@@ -95,14 +129,13 @@ export const createEstimate = async (estimate: Omit<Estimate, 'id' | 'created_at
     throw error;
   }
   
-  return data;
+  return convertDbEstimateToEstimate(data as EstimateFromDB);
 };
 
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<Estimate> => {
   console.log(`Updating estimate ${id} to status: ${status}`);
   
   try {
-    // Use 'update' instead of 'upsert' to avoid creating a new row
     const { data, error } = await supabase
       .from('estimates')
       .update({ status, updated_at: new Date().toISOString() })
@@ -118,7 +151,7 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
       throw new Error('No estimate found with the provided ID');
     }
     
-    return data[0]; // Return the first item from the array
+    return convertDbEstimateToEstimate(data[0] as EstimateFromDB);
   } catch (error) {
     console.error('Error in updateEstimateStatus:', error);
     throw error;
@@ -141,7 +174,6 @@ export const getEstimatePreviewHtml = (estimate: Estimate, items: any[]): string
   const date = new Date(estimate.created_at);
   const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   
-  // Convert shipping address to string if it's an object
   let shippingAddressString = '';
   if (typeof estimate.shipping_address === 'string') {
     shippingAddressString = estimate.shipping_address;
