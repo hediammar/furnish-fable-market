@@ -7,6 +7,7 @@ export interface NewsletterSubscriber {
   email: string;
   first_name?: string;
   created_at?: string;
+  subscribed_at?: string;
 }
 
 export interface Newsletter {
@@ -143,6 +144,12 @@ export const sendNewsletter = async (newsletterId: string): Promise<void> => {
       console.error('Error sending newsletter:', error);
       throw error;
     }
+    
+    // Update the newsletter with the sent date
+    await supabase
+      .from('newsletters')
+      .update({ sent_at: new Date().toISOString() })
+      .eq('id', newsletterId);
     
     toast.success('Newsletter sent successfully!');
   } catch (error) {

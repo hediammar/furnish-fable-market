@@ -69,9 +69,11 @@ serve(async (req) => {
     let htmlContent = "";
     if (typeof newsletter.content === 'string') {
       htmlContent = newsletter.content;
-    } else {
-      // If it's structured content, render it as HTML (simplified)
-      htmlContent = `
+    } else if (typeof newsletter.content === 'object') {
+      // Convert the structured content object to HTML
+      try {
+        const contentObj = newsletter.content;
+        htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -113,7 +115,7 @@ serve(async (req) => {
     <p>${newsletter.preheader || ''}</p>
   </div>
   <div class="content">
-    ${JSON.stringify(newsletter.content)}
+    ${contentObj.html || contentObj.text || JSON.stringify(contentObj)}
   </div>
   <div class="footer">
     <p>Meubles Karim | Route Hammamet Nord vers Nabeul, Hammamet, Tunisia, 8050</p>
@@ -122,7 +124,17 @@ serve(async (req) => {
   </div>
 </body>
 </html>
-      `;
+        `;
+      } catch (e) {
+        console.error("Error formatting newsletter content:", e);
+        htmlContent = `
+          <html><body>
+            <h1>${newsletter.subject}</h1>
+            <p>${newsletter.preheader || 'Newsletter from Meubles Karim'}</p>
+            <div>${JSON.stringify(newsletter.content)}</div>
+          </body></html>
+        `;
+      }
     }
     
     // Create a counter for successful emails

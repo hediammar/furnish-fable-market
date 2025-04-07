@@ -138,35 +138,56 @@ export const fetchEstimateById = async (id: string): Promise<Estimate> => {
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<Estimate> => {
   console.log(`Updating estimate ${id} to status: ${status}`);
   
-  const { data, error } = await supabase
-    .from('estimates')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+  try {
+    // First check if the estimate exists
+    const { data: existingEstimate, error: checkError } = await supabase
+      .from('estimates')
+      .select('id')
+      .eq('id', id)
+      .single();
+    
+    if (checkError) {
+      console.error('Error checking estimate existence:', checkError);
+      throw checkError;
+    }
+    
+    // Update the estimate status
+    const { data, error } = await supabase
+      .from('estimates')
+      .update({ 
+        status, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error updating estimate status:', error);
+    if (error) {
+      console.error('Error updating estimate status:', error);
+      throw error;
+    }
+    
+    console.log('Status updated successfully, returned data:', data);
+
+    // Send estimate preview by email if approved
+    if (status === 'approved') {
+      try {
+        // Get the full estimate with items
+        const estimate = await fetchEstimateById(id);
+        
+        // Send estimate preview via email
+        await sendEstimatePreview(estimate);
+      } catch (emailError) {
+        console.error('Error sending estimate preview email:', emailError);
+        // We don't throw here to avoid preventing the status update
+      }
+    }
+
+    return data as Estimate;
+  } catch (error) {
+    console.error('Error in updateEstimateStatus:', error);
     throw error;
   }
-  
-  console.log('Status updated successfully, returned data:', data);
-
-  // Send estimate preview by email if approved
-  if (status === 'approved') {
-    try {
-      // Get the full estimate with items
-      const estimate = await fetchEstimateById(id);
-      
-      // Send estimate preview via email
-      await sendEstimatePreview(estimate);
-    } catch (emailError) {
-      console.error('Error sending estimate preview email:', emailError);
-      // We don't throw here to avoid preventing the status update
-    }
-  }
-
-  return data as Estimate;
 };
 
 export const deleteEstimate = async (id: string): Promise<void> => {
