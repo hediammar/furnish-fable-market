@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -63,26 +62,11 @@ const PartnersManagement: React.FC = () => {
     try {
       // Create a unique file name to avoid collisions
       const fileName = `partner-logo-${Date.now()}.${file.name.split('.').pop()}`;
-
-      // Check if the 'partners' bucket exists, create it if it doesn't
-      const { data: buckets } = await supabase.storage.listBuckets();
       
-      if (!buckets?.find(bucket => bucket.name === 'partners')) {
-        const { data, error } = await supabase.storage.createBucket('partners', {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-        });
-        
-        if (error) {
-          console.error('Error creating bucket:', error);
-          throw error;
-        }
-      }
-      
-      // Upload the file
+      // Upload directly to the existing partners bucket
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('partners')
-        .upload(fileName, file, {
+        .upload(`logos/${fileName}`, file, {
           upsert: true,
           cacheControl: '3600'
         });
@@ -95,7 +79,7 @@ const PartnersManagement: React.FC = () => {
       // Get the public URL
       const { data: urlData } = supabase.storage
         .from('partners')
-        .getPublicUrl(fileName);
+        .getPublicUrl(`logos/${fileName}`);
         
       return urlData.publicUrl;
     } catch (error) {

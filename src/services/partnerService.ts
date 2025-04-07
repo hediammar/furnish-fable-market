@@ -47,9 +47,9 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
       const fileName = `${timestamp}-${randomString}.${fileExtension}`;
       
       try {
-        // No need to create bucket here - it should be created via SQL migration
+        // Upload directly to the existing bucket without trying to create it
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('partners') // Use the bucket created via SQL
+          .from('partners')
           .upload(`logos/${fileName}`, logoFile, {
             cacheControl: '3600',
             upsert: false

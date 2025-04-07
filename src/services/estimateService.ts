@@ -1,194 +1,124 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 export interface Estimate {
   id: string;
-  user_id: string | null;
-  total_amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
-  contact_email: string;
-  contact_phone: string;
-  shipping_address: string;
+  user_id?: string;
   items: {
     product_id: string;
-    quantity: number;
     name: string;
+    quantity: number;
   }[];
+  shipping_address: string | {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
+  contact_email: string;
+  contact_phone: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  total_amount?: number;
   created_at: string;
   updated_at?: string;
 }
 
 export const fetchEstimates = async (): Promise<Estimate[]> => {
-  try {
-    console.log('Fetching estimates...');
-    const { data, error } = await supabase
-      .from('estimates')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching estimates:', error);
-      throw error;
-    }
-
-    console.log('Fetched estimates data:', data);
-
-    // Properly parse and transform the data
-    return (data || []).map((estimate: any) => {
-      // Parse JSON fields if needed
-      let parsedItems = estimate.items;
-      let parsedAddress = estimate.shipping_address;
-      
-      try {
-        // If items is a string, try to parse it
-        if (typeof parsedItems === 'string') {
-          parsedItems = JSON.parse(parsedItems);
-        }
-        
-        // If the parsed result is not an array, ensure it is
-        if (!Array.isArray(parsedItems)) {
-          console.warn('Items is not an array:', parsedItems);
-          parsedItems = [];
-        }
-        
-        // Handle shipping_address parsing
-        if (typeof parsedAddress === 'string') {
-          try {
-            parsedAddress = JSON.parse(parsedAddress);
-          } catch (e) {
-            // If it can't be parsed as JSON, use it as is (string address)
-            console.log('Using shipping_address as string');
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing JSON data:', error);
-        parsedItems = Array.isArray(estimate.items) ? estimate.items : [];
-        parsedAddress = estimate.shipping_address;
-      }
-      
-      return {
-        ...estimate,
-        status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
-        items: parsedItems,
-        shipping_address: parsedAddress
-      };
-    }) as Estimate[];
-  } catch (error) {
-    console.error('Error in fetchEstimates:', error);
-    return [];
+  const { data, error } = await supabase
+    .from('estimates')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching estimates:', error);
+    throw error;
   }
+  
+  console.log('Fetched estimates data:', data);
+  
+  // Convert shipping_address to a consistent format
+  if (data) {
+    return data.map(estimate => {
+      if (typeof estimate.shipping_address === 'string') {
+        console.log('Using shipping_address as string');
+        return estimate;
+      } else {
+        // Convert the shipping_address object to a formatted string if it's not already a string
+        if (estimate.shipping_address && typeof estimate.shipping_address === 'object') {
+          const addr = estimate.shipping_address as any;
+          const formattedAddress = `${addr.street || ''}
+${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}
+${addr.country || ''}`.trim();
+          
+          return {
+            ...estimate,
+            shipping_address: formattedAddress
+          };
+        }
+        return estimate;
+      }
+    });
+  }
+  
+  return [];
 };
 
 export const fetchEstimateById = async (id: string): Promise<Estimate> => {
-  try {
-    const { data, error } = await supabase
-      .from('estimates')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching estimate:', error);
-      throw error;
-    }
-
-    // Parse JSON fields if needed
-    let parsedItems = data.items;
-    let parsedAddress = data.shipping_address;
-    
-    try {
-      // If items is a string, try to parse it
-      if (typeof parsedItems === 'string') {
-        parsedItems = JSON.parse(parsedItems);
-      }
-      
-      // If the parsed result is not an array, ensure it is
-      if (!Array.isArray(parsedItems)) {
-        console.warn('Items is not an array:', parsedItems);
-        parsedItems = [];
-      }
-      
-      // Handle shipping_address parsing
-      if (typeof parsedAddress === 'string') {
-        try {
-          parsedAddress = JSON.parse(parsedAddress);
-        } catch (e) {
-          // If it can't be parsed as JSON, use it as is (string address)
-          console.log('Using shipping_address as string');
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing JSON data:', error);
-      parsedItems = Array.isArray(data.items) ? data.items : [];
-      parsedAddress = data.shipping_address;
-    }
-    
-    return {
-      ...data,
-      status: data.status as 'pending' | 'approved' | 'rejected' | 'completed',
-      items: parsedItems,
-      shipping_address: parsedAddress
-    } as Estimate;
-  } catch (error) {
-    console.error('Error in fetchEstimateById:', error);
+  const { data, error } = await supabase
+    .from('estimates')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching estimate:', error);
     throw error;
   }
+  
+  return data;
+};
+
+export const createEstimate = async (estimate: Omit<Estimate, 'id' | 'created_at' | 'updated_at' | 'status'>): Promise<Estimate> => {
+  const { data, error } = await supabase
+    .from('estimates')
+    .insert([{
+      ...estimate,
+      status: 'pending'
+    }])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating estimate:', error);
+    throw error;
+  }
+  
+  return data;
 };
 
 export const updateEstimateStatus = async (id: string, status: Estimate['status']): Promise<Estimate> => {
   console.log(`Updating estimate ${id} to status: ${status}`);
   
   try {
-    // First check if the estimate exists
-    const { data: existingEstimate, error: checkError } = await supabase
-      .from('estimates')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle(); // Changed from single() to maybeSingle() to handle the case when no rows are returned
-    
-    if (checkError) {
-      console.error('Error checking estimate existence:', checkError);
-      throw checkError;
-    }
-    
-    if (!existingEstimate) {
-      throw new Error(`Estimate with id ${id} not found`);
-    }
-    
-    // Update the estimate status
+    // Use 'update' instead of 'upsert' to avoid creating a new row
     const { data, error } = await supabase
       .from('estimates')
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString() 
-      })
+      .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
-      .single();
-
+      .select();
+    
     if (error) {
       console.error('Error updating estimate status:', error);
       throw error;
     }
     
-    console.log('Status updated successfully, returned data:', data);
-
-    // Send estimate preview by email if approved
-    if (status === 'approved') {
-      try {
-        // Get the full estimate with items
-        const estimate = await fetchEstimateById(id);
-        
-        // Send estimate preview via email
-        await sendEstimatePreview(estimate);
-      } catch (emailError) {
-        console.error('Error sending estimate preview email:', emailError);
-        // We don't throw here to avoid preventing the status update
-      }
+    if (!data || data.length === 0) {
+      throw new Error('No estimate found with the provided ID');
     }
-
-    return data as Estimate;
+    
+    return data[0]; // Return the first item from the array
   } catch (error) {
     console.error('Error in updateEstimateStatus:', error);
     throw error;
@@ -200,298 +130,156 @@ export const deleteEstimate = async (id: string): Promise<void> => {
     .from('estimates')
     .delete()
     .eq('id', id);
-
+  
   if (error) {
     console.error('Error deleting estimate:', error);
     throw error;
   }
 };
 
-export const fetchUserEstimates = async (userId: string): Promise<Estimate[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('estimates')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching user estimates:', error);
-      throw error;
-    }
-
-    // Properly parse and transform the data
-    return (data || []).map((estimate: any) => {
-      // Parse JSON fields if needed
-      let parsedItems = estimate.items;
-      let parsedAddress = estimate.shipping_address;
-      
-      try {
-        // If items is a string, try to parse it
-        if (typeof parsedItems === 'string') {
-          parsedItems = JSON.parse(parsedItems);
-        }
-        
-        // If the parsed result is not an array, ensure it is
-        if (!Array.isArray(parsedItems)) {
-          console.warn('Items is not an array:', parsedItems);
-          parsedItems = [];
-        }
-        
-        // Handle shipping_address parsing
-        if (typeof parsedAddress === 'string') {
-          try {
-            parsedAddress = JSON.parse(parsedAddress);
-          } catch (e) {
-            // If it can't be parsed as JSON, use it as is (string address)
-            console.log('Using shipping_address as string');
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing JSON data:', error);
-        parsedItems = Array.isArray(estimate.items) ? estimate.items : [];
-        parsedAddress = estimate.shipping_address;
-      }
-      
-      return {
-        ...estimate,
-        status: estimate.status as 'pending' | 'approved' | 'rejected' | 'completed',
-        items: parsedItems,
-        shipping_address: parsedAddress
-      };
-    }) as Estimate[];
-  } catch (error) {
-    console.error('Error in fetchUserEstimates:', error);
-    return [];
-  }
-};
-
-export const sendEstimatePreview = async (estimate: Estimate): Promise<void> => {
-  try {
-    // Get product details for the items in the estimate
-    const productIds = estimate.items.map(item => item.product_id);
-    
-    // Only fetch products if there are product IDs
-    let items = estimate.items;
-    
-    if (productIds.length > 0) {
-      const { data: products } = await supabase
-        .from('products')
-        .select('id, name, price, image')
-        .in('id', productIds);
-      
-      if (products && products.length > 0) {
-        // Enhance items with product details
-        items = estimate.items.map(item => {
-          const product = products.find(p => p.id === item.product_id);
-          return {
-            ...item,
-            product: product || { name: item.name }
-          };
-        });
-      }
-    }
-    
-    // Call the edge function to send the estimate preview
-    const { error } = await supabase.functions.invoke('send-estimate', {
-      body: { 
-        email: estimate.contact_email,
-        estimate,
-        items,
-        language: 'en' // Default to English, can be made dynamic
-      }
-    });
-    
-    if (error) {
-      console.error('Error invoking send-estimate function:', error);
-      throw error;
-    }
-    
-    console.log('Estimate preview sent successfully');
-  } catch (error) {
-    console.error('Error in sendEstimatePreview:', error);
-    throw error;
-  }
-};
-
 export const getEstimatePreviewHtml = (estimate: Estimate, items: any[]): string => {
-  const productsTable = items.map((item, index) => `
-    <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${index + 1}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.name}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">Price on request</td>
-    </tr>
-  `).join('');
-
-  const addressParts = typeof estimate.shipping_address === 'string' 
-    ? estimate.shipping_address.split(',').map(part => part.trim())
-    : ['Address not available'];
+  const date = new Date(estimate.created_at);
+  const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  
+  // Convert shipping address to string if it's an object
+  let shippingAddressString = '';
+  if (typeof estimate.shipping_address === 'string') {
+    shippingAddressString = estimate.shipping_address;
+  } else if (typeof estimate.shipping_address === 'object') {
+    const addr = estimate.shipping_address as any;
+    shippingAddressString = `${addr.street || ''}\n${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}\n${addr.country || ''}`.trim();
+  }
+  
+  const statusColor = {
+    pending: '#FFC107',
+    approved: '#4CAF50',
+    rejected: '#F44336',
+    completed: '#2196F3'
+  }[estimate.status];
   
   return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Estimate Request - #${estimate.id.substring(0, 8)}</title>
-    <style>
-      body {
-        font-family: 'Playfair Display', serif;
-        color: #333;
-        line-height: 1.6;
-        background-color: #f9f8f6;
-      }
-      .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 40px;
-        background-color: #fff;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 1px solid #e0e0e0;
-      }
-      .header {
-        text-align: center;
-        margin-bottom: 40px;
-        border-bottom: 2px solid #9F8E7D;
-        padding-bottom: 20px;
-      }
-      .header h1 {
-        color: #9F8E7D;
-        margin-bottom: 5px;
-        font-size: 32px;
-        font-weight: normal;
-      }
-      .header p {
-        color: #666;
-        font-size: 16px;
-      }
-      .estimate-info {
-        margin-bottom: 40px;
-        display: flex;
-        justify-content: space-between;
-      }
-      .estimate-details, .customer-details {
-        width: 48%;
-      }
-      .section-title {
-        font-size: 18px;
-        font-weight: normal;
-        color: #9F8E7D;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 8px;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 30px;
-        font-family: 'Cormorant Garamond', serif;
-      }
-      th {
-        background-color: #f8f6f2;
-        padding: 15px 10px;
-        text-align: left;
-        font-weight: normal;
-        border-bottom: 2px solid #e2e8f0;
-        color: #9F8E7D;
-      }
-      .footer {
-        margin-top: 50px;
-        text-align: center;
-        font-size: 14px;
-        color: #666;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 30px;
-      }
-      .note {
-        background-color: #f8f6f2;
-        padding: 20px;
-        border-radius: 5px;
-        margin-top: 40px;
-        border-left: 4px solid #9F8E7D;
-      }
-      .note p {
-        margin: 0;
-      }
-      .logo {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-      .logo img {
-        max-width: 180px;
-      }
-      .stamp {
-        position: absolute;
-        top: 80px;
-        right: 80px;
-        transform: rotate(15deg);
-        color: rgba(159, 142, 125, 0.2);
-        border: 4px solid rgba(159, 142, 125, 0.2);
-        border-radius: 50%;
-        padding: 15px;
-        font-size: 24px;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="stamp">${estimate.status}</div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Estimate #${estimate.id}</title>
+      <style>
+        body {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #eee;
+        }
+        .estimate-id {
+          font-size: 14px;
+          color: #666;
+        }
+        .status {
+          display: inline-block;
+          padding: 5px 10px;
+          border-radius: 4px;
+          color: white;
+          font-weight: bold;
+          margin-top: 10px;
+        }
+        .section {
+          margin-bottom: 20px;
+        }
+        .section-title {
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #555;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        table th, table td {
+          padding: 10px;
+          text-align: left;
+          border-bottom: 1px solid #eee;
+        }
+        table th {
+          background-color: #f7f7f7;
+        }
+        .contact-info {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+        .address {
+          white-space: pre-line;
+        }
+        .footer {
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          text-align: center;
+          font-size: 12px;
+          color: #777;
+        }
+      </style>
+    </head>
+    <body>
       <div class="header">
-        <div class="logo">
-          <img src="https://via.placeholder.com/180x50?text=Meubles+Karim" alt="Meubles Karim Logo">
+        <h1>Estimate</h1>
+        <div class="estimate-id">Estimate ID: ${estimate.id}</div>
+        <div class="status" style="background-color: ${statusColor}">
+          ${estimate.status.toUpperCase()}
         </div>
-        <h1>Exclusive Estimate</h1>
-        <p>Request #${estimate.id.substring(0, 8)}</p>
       </div>
       
-      <div class="estimate-info">
-        <div class="estimate-details">
-          <div class="section-title">Estimate Details</div>
-          <p><strong>Date:</strong> ${new Date(estimate.created_at).toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}</p>
-          <p><strong>Status:</strong> ${estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}</p>
+      <div class="contact-info">
+        <div class="section">
+          <div class="section-title">Customer Information</div>
+          <p>Email: ${estimate.contact_email}</p>
+          <p>Phone: ${estimate.contact_phone}</p>
         </div>
         
-        <div class="customer-details">
-          <div class="section-title">Customer Information</div>
-          <p><strong>Email:</strong> ${estimate.contact_email}</p>
-          <p><strong>Phone:</strong> ${estimate.contact_phone}</p>
-          <p><strong>Address:</strong><br>
-            ${addressParts.join('<br>')}
-          </p>
+        <div class="section">
+          <div class="section-title">Estimate Details</div>
+          <p>Date: ${formattedDate}</p>
+          <p>Status: ${estimate.status}</p>
         </div>
       </div>
       
-      <div class="section-title">Requested Items</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 5%;">#</th>
-            <th style="width: 55%;">Product</th>
-            <th style="width: 15%; text-align: center;">Quantity</th>
-            <th style="width: 25%; text-align: right;">Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${productsTable}
-        </tbody>
-      </table>
+      <div class="section">
+        <div class="section-title">Shipping Address</div>
+        <p class="address">${shippingAddressString}</p>
+      </div>
       
-      <div class="note">
-        <p><strong>Note:</strong> We will contact you shortly with a detailed price estimate for the requested items.</p>
+      <div class="section">
+        <div class="section-title">Items</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>${item.name || (item.product ? item.product.name : 'Unknown Product')}</td>
+                <td>${item.quantity}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
       
       <div class="footer">
-        <p>Meubles Karim | Route Hammamet Nord vers Nabeul, Hammamet, Tunisia, 8050 | (+216) 72 260 360</p>
-        <p>Thank you for your interest in our exclusive collection!</p>
+        <p>This is an automatically generated estimate document.</p>
       </div>
-    </div>
-  </body>
-  </html>
+    </body>
+    </html>
   `;
 };
