@@ -9,7 +9,7 @@ export const getHeroContent = async (page: string): Promise<HeroContent | null> 
     .from('hero_content')
     .select('*')
     .eq('page', page)
-    .single();
+    .maybeSingle(); // Use maybeSingle instead of single to handle case when no rows are returned
   
   if (error) {
     // If no data found, don't throw an error
@@ -40,11 +40,16 @@ export const getAllHeroContent = async (): Promise<HeroContent[]> => {
 export const saveHeroContent = async (content: HeroContent): Promise<HeroContent> => {
   try {
     // Check if the content already exists
-    const { data: existingData } = await supabase
+    const { data: existingData, error: checkError } = await supabase
       .from('hero_content')
       .select('id')
       .eq('page', content.page)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking hero content:', checkError);
+      throw checkError;
+    }
     
     let result;
     

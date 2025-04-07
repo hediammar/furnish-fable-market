@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
@@ -144,11 +145,15 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
       .from('estimates')
       .select('id')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Changed from single() to maybeSingle() to handle the case when no rows are returned
     
     if (checkError) {
       console.error('Error checking estimate existence:', checkError);
       throw checkError;
+    }
+    
+    if (!existingEstimate) {
+      throw new Error(`Estimate with id ${id} not found`);
     }
     
     // Update the estimate status
