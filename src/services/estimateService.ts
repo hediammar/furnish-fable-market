@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
@@ -137,29 +136,72 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
   console.log(`Updating estimate ${id} to status: ${status}`);
   
   try {
-    // Important fix: Use eq instead of match for UUID fields
-    const { data, error } = await supabase
+    // Validate UUID format first
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      throw new Error('Invalid estimate ID format');
+    }
+
+    // First check if the estimate exists
+    const { data: checkData, error: checkError } = await supabase
       .from('estimates')
-      .update({ status, updated_at: new Date().toISOString() })
+      .select('*')
+      .eq('id', id);
+    
+    if (checkError) {
+      console.error('Error checking estimate existence:', checkError);
+      throw checkError;
+    }
+    
+    if (!checkData || checkData.length === 0) {
+      console.error('No estimate found with ID:', id);
+      throw new Error(`No estimate found with ID: ${id}`);
+    }
+
+    // Store the original estimate data
+    const originalEstimate = checkData[0];
+    console.log('Found estimate:', originalEstimate);
+
+    // Create the update payload
+    const updatePayload = { 
+      status, 
+      updated_at: new Date().toISOString() 
+    };
+    console.log('Update payload:', updatePayload);
+
+    // Perform the update with explicit logging
+    const { data: updateData, error: updateError, count } = await supabase
+      .from('estimates')
+      .update(updatePayload)
       .eq('id', id)
-      .select('*');
+      .select();
+
+    console.log('Update response:', { data: updateData, error: updateError, count });
     
-    if (error) {
-      console.error('Error updating estimate status:', error);
-      throw error;
+    if (updateError) {
+      console.error('Update error:', updateError);
+      throw updateError;
+    }
+
+    // Verify the update was successful by fetching the record again
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (verifyError) {
+      console.error('Error verifying update:', verifyError);
+      throw verifyError;
     }
     
-    if (!data || data.length === 0) {
-      console.error('No data returned after update. ID may not exist:', id);
-      throw new Error('No estimate found with the provided ID');
+    console.log('Verified updated estimate:', verifyData);
+    
+    if (verifyData.status !== status) {
+      console.error('Update verification failed: status not updated in database');
+      throw new Error('Failed to update estimate status in database');
     }
     
-    // Handle both single object and array responses
-    const estimateData = Array.isArray(data) ? data[0] : data;
-    
-    console.log('Update successful, returned data:', estimateData);
-    
-    return convertDbEstimateToEstimate(estimateData as EstimateFromDB);
+    return convertDbEstimateToEstimate(verifyData as EstimateFromDB);
   } catch (error) {
     console.error('Error in updateEstimateStatus:', error);
     throw error;

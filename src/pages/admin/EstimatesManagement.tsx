@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
@@ -61,10 +60,11 @@ const EstimatesManagement: React.FC = () => {
     mutationFn: async ({ id, status }: { id: string; status: Estimate['status'] }) => {
       try {
         console.log(`Starting mutation to update estimate ${id} to ${status}`);
+        // First update the estimate status in the database
         const updatedEstimate = await updateEstimateStatus(id, status);
         
+        // Then try to send a notification, but don't fail the whole operation if this part fails
         try {
-          // Add some logging to debug notification issues
           console.log('Sending notification for status update:', { id, status });
           const { data, error } = await supabase.functions.invoke('notify-estimate-status', {
             body: { id, status },
@@ -72,31 +72,39 @@ const EstimatesManagement: React.FC = () => {
           
           if (error) {
             console.error('Error sending notification:', error);
-            throw error;
+            // Just log the error but don't throw
+            toast({
+              title: 'Status updated',
+              description: 'Estimate status updated, but notification could not be sent.',
+              variant: 'default',
+            });
+          } else {
+            console.log('Notification sent successfully:', data);
+            toast({
+              title: 'Status updated',
+              description: 'Estimate status updated and notification sent.',
+              variant: 'default',
+            });
           }
-          
-          console.log('Notification sent successfully:', data);
         } catch (error) {
           console.error('Failed to send notification:', error);
+          // Just log the error but don't throw
           toast({
-            title: 'Warning',
-            description: 'Status updated but notification email could not be sent.',
-            variant: 'destructive',
+            title: 'Status updated',
+            description: 'Estimate status updated, but notification could not be sent.',
+            variant: 'default',
           });
         }
         
+        // Return the updated estimate regardless of notification status
         return updatedEstimate;
       } catch (error) {
-        console.error('Error in updateStatusMutation:', error);
+        console.error('Error updating estimate status:', error);
         throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'estimates'] });
-      toast({
-        title: 'Status updated',
-        description: 'The estimate status has been successfully updated and customer notified.',
-      });
       setIsViewDialogOpen(false);
     },
     onError: (error) => {
