@@ -217,6 +217,9 @@ const EstimatesPage: React.FC = () => {
                       <TableRow>
                         <TableHead>Item</TableHead>
                         <TableHead className="text-right">Quantity</TableHead>
+                        {viewingEstimate.status === 'approved' && (
+                          <TableHead className="text-right">Price</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -225,11 +228,19 @@ const EstimatesPage: React.FC = () => {
                           <TableRow key={`${item.product_id}-${index}`}>
                             <TableCell>{item.name}</TableCell>
                             <TableCell className="text-right">{item.quantity}</TableCell>
+                            {viewingEstimate.status === 'approved' && (
+                              <TableCell className="text-right">
+                                {language === 'fr' 
+                                  ? `${(item.price || 0).toLocaleString('fr-FR')} DT`
+                                  : `${(item.price || 0).toLocaleString('en-US')} TND`
+                                }
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={2} className="text-center py-4 text-muted-foreground">
+                          <TableCell colSpan={viewingEstimate.status === 'approved' ? 3 : 2} className="text-center py-4 text-muted-foreground">
                             No items in this estimate
                           </TableCell>
                         </TableRow>
@@ -237,6 +248,22 @@ const EstimatesPage: React.FC = () => {
                     </TableBody>
                   </Table>
                 </div>
+                
+                {viewingEstimate.status === 'approved' && (
+                  <div className="mt-4 flex justify-end">
+                    <div className="bg-muted p-4 rounded-md">
+                      <div className="flex justify-between items-center font-medium">
+                        <span className="mr-8">Total Amount:</span>
+                        <span className="text-lg">
+                          {language === 'fr' 
+                            ? `${(viewingEstimate.total_amount || 0).toLocaleString('fr-FR')} DT`
+                            : `${(viewingEstimate.total_amount || 0).toLocaleString('en-US')} TND`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

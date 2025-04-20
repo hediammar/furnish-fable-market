@@ -34,9 +34,9 @@ const CheckoutSuccess: React.FC = () => {
             </Button>
             
             <Button asChild variant="outline">
-              <Link to="/orders">
+              <Link to="/estimates">
                 <Package size={18} className="mr-2" />
-                View My Orders
+                View My Estimates
               </Link>
             </Button>
           </div>

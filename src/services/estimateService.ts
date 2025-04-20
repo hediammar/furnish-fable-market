@@ -9,6 +9,7 @@ export interface Estimate {
     product_id: string;
     name: string;
     quantity: number;
+    price?: number;
   }[];
   shipping_address: string | {
     street: string;
@@ -162,10 +163,45 @@ export const updateEstimateStatus = async (id: string, status: Estimate['status'
     console.log('Found estimate:', originalEstimate);
 
     // Create the update payload
-    const updatePayload = { 
+    const updatePayload: any = { 
       status, 
       updated_at: new Date().toISOString() 
     };
+
+    // If we're approving the estimate, fetch product prices and update the items
+    if (status === 'approved') {
+      const estimate = convertDbEstimateToEstimate(originalEstimate as EstimateFromDB);
+      const productIds = estimate.items.map(item => item.product_id);
+      
+      if (productIds.length > 0) {
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('id, price')
+          .in('id', productIds);
+        
+        if (productsError) {
+          console.error('Error fetching product prices:', productsError);
+        } else if (products && products.length > 0) {
+          // Update items with prices
+          const updatedItems = estimate.items.map(item => {
+            const product = products.find(p => p.id === item.product_id);
+            return {
+              ...item,
+              price: product ? product.price : 0
+            };
+          });
+          
+          // Calculate total amount
+          const totalAmount = updatedItems.reduce((sum, item) => {
+            return sum + (item.price || 0) * item.quantity;
+          }, 0);
+          
+          updatePayload.items = updatedItems;
+          updatePayload.total_amount = totalAmount;
+        }
+      }
+    }
+
     console.log('Update payload:', updatePayload);
 
     // Perform the update with explicit logging
@@ -229,7 +265,9 @@ export const getEstimatePreviewHtml = (estimate: Estimate, items: any[]): string
     shippingAddressString = estimate.shipping_address;
   } else if (typeof estimate.shipping_address === 'object') {
     const addr = estimate.shipping_address as any;
-    shippingAddressString = `${addr.street || ''}\n${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}\n${addr.country || ''}`.trim();
+    shippingAddressString = `${addr.street || ''}
+${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}
+${addr.country || ''}`.trim();
   }
   
   const statusColor = {
