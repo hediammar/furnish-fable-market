@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useCart } from '@/context/CartContext';
@@ -57,9 +56,14 @@ const Checkout: React.FC = () => {
 
   const createEstimate = async (formData: CheckoutFormValues) => {
     try {
+      const totalAmount = cartItems.reduce(
+        (total, item) => total + (item.product.price * item.quantity),
+        0
+      );
+      
       const { data, error } = await (supabase as any).from('estimates').insert({
         user_id: user?.id,
-        total_amount: 0, // Price on request, so we don't include actual totals
+        total_amount: totalAmount,
         status: 'pending',
         shipping_address: `${formData.address}, ${formData.city}, ${formData.zipCode}, ${formData.country}`,
         items: cartItems.map(item => ({
@@ -76,7 +80,15 @@ const Checkout: React.FC = () => {
         throw error;
       }
       
-      await sendEstimateEmail(formData.email, data[0]);
+      try {
+        await sendEstimateEmail(formData.email, data[0]);
+      } catch (emailError) {
+        console.error('Error sending estimate email, but estimate was created:', emailError);
+        // In development, show a message about CORS issues
+        if (window.location.hostname === 'localhost') {
+          console.info('Note: Email sending may fail in development due to CORS restrictions. The estimate has been saved successfully.');
+        }
+      }
       
       return data[0];
     } catch (error) {

@@ -1,0 +1,327 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { Resend } from "npm:resend@2.0.0";
+
+// Define CORS headers with localhost included
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // Ideally, specify exact origins like "http://localhost:8080,https://yourdomain.com"
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Max-Age": "86400" // 24 hours cache for preflight requests
+};
+
+// Initialize Supabase client and Resend
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://lzgipsyuloqrhfpfoudo.supabase.co";
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6Z2lwc3l1bG9xcmhmcGZvdWRvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MzA4MjIzOSwiZXhwIjoyMDU4NjU4MjM5fQ.H67kScHvw_X1jzOTaK5Na_ZozPYd2BGAG1W0M6XslSA";
+const supabase = createClient(supabaseUrl, supabaseKey);
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") || "re_6ewz8Dkw_336JpTn48rRXrYyZmLucq3ih");
+const senderEmail = "hediammar100@gmail.com";
+
+// Function to generate PDF-like content as HTML
+function generateEstimateHTML(estimate, items, language) {
+  const isEnglish = language !== 'fr';
+  const productsTable = items.map((item, index)=>`
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${index + 1}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.name}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${isEnglish ? 'Price on request' : 'Prix sur demande'}</td>
+    </tr>
+  `).join('');
+  const addressParts = typeof estimate.shipping_address === 'string' ? estimate.shipping_address.split(',').map((part)=>part.trim()) : [
+    'Address not available'
+  ];
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>${isEnglish ? 'Estimate Request' : 'Demande d\'estimation'} - #${estimate.id.substring(0, 8)}</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Cormorant+Garamond:wght@400;500&display=swap');
+      
+      body {
+        font-family: 'Cormorant Garamond', serif;
+        color: #333;
+        line-height: 1.6;
+        background-color: #f9f8f6;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px;
+        background-color: #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #9F8E7D;
+        padding-bottom: 20px;
+        position: relative;
+      }
+      .header h1 {
+        color: #9F8E7D;
+        margin-bottom: 8px;
+        font-size: 32px;
+        font-weight: normal;
+        font-family: 'Playfair Display', serif;
+      }
+      .header p {
+        color: #666;
+        font-size: 16px;
+      }
+      .estimate-info {
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .estimate-details, .customer-details {
+        width: 48%;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: normal;
+        font-family: 'Playfair Display', serif;
+        color: #9F8E7D;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+      }
+      th {
+        background-color: #f8f6f2;
+        padding: 15px 10px;
+        text-align: left;
+        font-weight: normal;
+        border-bottom: 2px solid #e2e8f0;
+        color: #9F8E7D;
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+      }
+      .footer {
+        margin-top: 50px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 30px;
+      }
+      .note {
+        background-color: #f8f6f2;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 40px;
+        border-left: 4px solid #9F8E7D;
+      }
+      .note p {
+        margin: 0;
+      }
+      .logo {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .logo img {
+        max-width: 180px;
+      }
+      .stamp {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        transform: rotate(15deg);
+        color: rgba(159, 142, 125, 0.2);
+        border: 4px solid rgba(159, 142, 125, 0.2);
+        border-radius: 50%;
+        padding: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      strong {
+        color: #9F8E7D;
+        font-weight: 500;
+      }
+      .contact-button {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 25px;
+        background-color: #9F8E7D;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+      }
+      .contact-button:hover {
+        background-color: #8d7c6c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="stamp">${estimate.status.toUpperCase()}</div>
+      <div class="header">
+        <div class="logo">
+          <img src="https://via.placeholder.com/180x50?text=Meubles+Karim" alt="Meubles Karim Logo">
+        </div>
+        <h1>${isEnglish ? 'Luxury Furniture Estimate' : 'Estimation de Meubles de Luxe'}</h1>
+        <p>${isEnglish ? 'Exclusive Request' : 'Demande Exclusive'} #${estimate.id.substring(0, 8)}</p>
+      </div>
+      
+      <div class="estimate-info">
+        <div class="estimate-details">
+          <div class="section-title">${isEnglish ? 'Estimate Details' : 'Détails de l\'estimation'}</div>
+          <p><strong>${isEnglish ? 'Date' : 'Date'}:</strong> ${new Date(estimate.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })}</p>
+          <p><strong>${isEnglish ? 'Status' : 'Statut'}:</strong> ${estimate.status === 'pending' ? isEnglish ? 'Pending' : 'En attente' : estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}</p>
+        </div>
+        
+        <div class="customer-details">
+          <div class="section-title">${isEnglish ? 'Customer Information' : 'Informations client'}</div>
+          <p><strong>${isEnglish ? 'Email' : 'Email'}:</strong> ${estimate.contact_email}</p>
+          <p><strong>${isEnglish ? 'Phone' : 'Téléphone'}:</strong> ${estimate.contact_phone}</p>
+          <p><strong>${isEnglish ? 'Address' : 'Adresse'}:</strong><br>
+            ${addressParts.join('<br>')}
+          </p>
+        </div>
+      </div>
+      
+      <div class="section-title">${isEnglish ? 'Requested Items' : 'Articles demandés'}</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 55%;">${isEnglish ? 'Product' : 'Produit'}</th>
+            <th style="width: 15%; text-align: center;">${isEnglish ? 'Quantity' : 'Quantité'}</th>
+            <th style="width: 25%; text-align: right;">${isEnglish ? 'Price' : 'Prix'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${productsTable}
+        </tbody>
+      </table>
+      
+      <div class="note">
+        <p><strong>${isEnglish ? 'Note' : 'Note'}:</strong> ${isEnglish ? 'We will contact you shortly with a detailed price estimate for the requested items. Our team of design experts is preparing a personalized quote for your consideration.' : 'Nous vous contacterons prochainement avec une estimation détaillée des prix pour les articles demandés. Notre équipe d\'experts en design prépare un devis personnalisé pour votre considération.'}</p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="mailto:contact@meubleskarim.com" class="contact-button">
+          ${isEnglish ? 'Contact Us' : 'Contactez-nous'}
+        </a>
+      </div>
+      
+      <div class="footer">
+        <p>Meubles Karim | Route Hammamet Nord vers Nabeul, Hammamet, Tunisia, 8050 | (+216) 72 260 360</p>
+        <p>${isEnglish ? 'Thank you for your interest in our exclusive collection!' : 'Merci pour votre intérêt pour notre collection exclusive!'}</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+// Main handler function
+const handler = async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204, // No content for OPTIONS requests
+      headers: corsHeaders
+    });
+  }
+
+  try {
+    const body = await req.json();
+    const { email, estimate, items, language } = body;
+    
+    if (!email || !estimate || !items) {
+      throw new Error("Missing required fields in request body");
+    }
+    
+    console.log("Preparing to send estimate email to:", email);
+    
+    // Generate HTML content for the email
+    const htmlContent = generateEstimateHTML(estimate, items, language);
+    
+    // Send email using Resend
+    const emailSubject = language === 'fr' 
+      ? `Demande d'estimation #${estimate.id.substring(0, 8)} - Meubles Karim` 
+      : `Estimate Request #${estimate.id.substring(0, 8)} - Meubles Karim`;
+    
+    try {
+      const emailResponse = await resend.emails.send({
+        from: `Meubles Karim <${senderEmail}>`,
+        to: [email],
+        subject: emailSubject,
+        html: htmlContent
+      });
+      
+      console.log("Email sent successfully:", emailResponse);
+      
+      // Insert a record into a `email_logs` table to track the email
+      const { error: logError } = await supabase.from('email_logs').insert({
+        email: email,
+        subject: emailSubject,
+        related_id: estimate.id,
+        related_type: 'estimate',
+        success: true
+      });
+      
+      if (logError) {
+        console.error("Error logging email send attempt:", logError);
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Estimate email sent successfully"
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      });
+    } catch (emailError) {
+      console.error("Error in email sending:", emailError);
+      
+      // Log the failed attempt
+      await supabase.from('email_logs').insert({
+        email: email,
+        subject: emailSubject,
+        related_id: estimate.id,
+        related_type: 'estimate',
+        success: false,
+        error_message: String(emailError)
+      });
+      
+      throw new Error(`Failed to send email: ${String(emailError)}`);
+    }
+  } catch (error) {
+    console.error("Error in send-estimate function:", error);
+    
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders
+      }
+    });
+  }
+};
+
+// Start the server
+serve(handler);
