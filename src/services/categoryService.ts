@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
 
@@ -13,6 +12,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
     throw error;
   }
   
+  console.log('Fetched categories:', data);
   return data as Category[];
 };
 
@@ -34,6 +34,7 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
         return null;
       }
       
+      console.log('Fetched category by ID:', data);
       return data as Category;
     } else {
       // If not a UUID, try to find by name
@@ -58,9 +59,11 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
           return null;
         }
         
+        console.log('Fetched category by fuzzy search:', fuzzyData);
         return fuzzyData as Category;
       }
       
+      console.log('Fetched category by name:', data);
       return data as Category;
     }
   } catch (error) {
