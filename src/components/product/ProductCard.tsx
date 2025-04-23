@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Eye } from 'lucide-react';
@@ -8,9 +7,10 @@ import { useLanguage } from '@/context/LanguageContext';
 
 interface ProductCardProps {
   product: Product;
+  onClick?: () => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   const { addToCart } = useCart();
   const { language } = useLanguage();
   
@@ -21,7 +21,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <div className="group bg-white rounded-md overflow-hidden card-shadow animate-scale-in">
+    <div 
+      className="group bg-white rounded-md overflow-hidden card-shadow animate-scale-in"
+      onClick={onClick}
+    >
       {/* Product Image */}
       <div className="relative overflow-hidden">
         <Link to={`/product/${product.id}`}>

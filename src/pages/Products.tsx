@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -6,13 +5,16 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Product } from '@/types/product';
 import { ProductFilterOptions, fetchProducts } from '@/services/productService';
+import { fetchCategories } from '@/services/categoryService';
+import { Category } from '@/types/category';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Filter, X } from 'lucide-react';
+import { ArrowRight, Filter, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -36,7 +38,9 @@ const Products: React.FC = () => {
   const [sortOption, setSortOption] = useState<string>('newest');
   const [priceRange, setPriceRange] = useState<number[]>([0, 1000]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [availableMaterials, setAvailableMaterials] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -46,7 +50,12 @@ const Products: React.FC = () => {
     const initialSearchQuery = searchParams.get('q') || '';
     setSearchQuery(initialSearchQuery);
     fetchFilteredProducts();
-  }, [searchQuery, sortOption, priceRange, selectedMaterials]);
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    fetchFilteredProducts();
+  }, [searchQuery, sortOption, priceRange, selectedMaterials, selectedCategories]);
 
   useEffect(() => {
     const fetchMaterials = async () => {
@@ -71,24 +80,64 @@ const Products: React.FC = () => {
     fetchMaterials();
   }, [language]);
 
+  const loadCategories = async () => {
+    try {
+      const categoriesData = await fetchCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
   const fetchFilteredProducts = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Build filter options
       const filterOptions: ProductFilterOptions = {
-        search: searchQuery,
-        sortBy: sortOption,
+        search: searchQuery || undefined,
+        sort: sortOption,
         materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+        maxPrice: priceRange[1] < 1000 ? priceRange[1] : undefined,
       };
       
-      const fetchedProducts = await fetchProducts(filterOptions);
-      setProducts(fetchedProducts);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setError(language === 'fr' ? 'Erreur lors du chargement des produits' : 'Error loading products');
+      console.log('Filtering products with options:', filterOptions);
+      const data = await fetchProducts(filterOptions);
+      console.log(`Found ${data.length} products`);
+      setProducts(data);
+      
+      // Extract unique materials from products for filter options
+      if (data.length > 0 && availableMaterials.length === 0) {
+        const materials = data
+          .map(product => product.material)
+          .filter((material): material is string => !!material)
+          .filter((value, index, self) => self.indexOf(value) === index);
+        
+        setAvailableMaterials(materials);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching products');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMaterialToggle = (material: string) => {
+    setSelectedMaterials(prev => 
+      prev.includes(material)
+        ? prev.filter(m => m !== material)
+        : [...prev, material]
+    );
+  };
+  
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,326 +159,257 @@ const Products: React.FC = () => {
     setPriceRange(value);
   };
 
-  const toggleMaterial = (material: string) => {
-    setSelectedMaterials(prev =>
-      prev.includes(material)
-        ? prev.filter(m => m !== material)
-        : [...prev, material]
-    );
-  };
-
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
 
   const clearFilters = () => {
-    setSelectedMaterials([]);
     setPriceRange([0, 1000]);
+    setSelectedMaterials([]);
+    setSelectedCategories([]);
     setSortOption('newest');
   };
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="min-h-screen">
       <Helmet>
-        <title>{language === 'fr' ? 'Produits | Meubles Karim' : 'Products | Meubles Karim'}</title>
-        <meta name="description" content={language === 'fr' ? 'Découvrez nos produits' : 'Discover our products'} />
+        <title>
+          {language === 'fr' ? 'Produits | Meubles Karim' : 'Products | Meubles Karim'}
+        </title>
       </Helmet>
       
-      <h1 className="font-serif text-3xl font-medium mb-8">
-        {language === 'fr' ? 'Nos Produits' : 'Our Products'}
-      </h1>
-      
-      <div className="relative flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar - Desktop */}
-        <div className="hidden lg:block w-64 shrink-0 space-y-6">
-          <div className="bg-white rounded-lg shadow-soft p-5 space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-lg font-medium">
-                {language === 'fr' ? 'Filtres' : 'Filters'}
-              </h3>
-              {(selectedMaterials.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000) && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs h-7">
-                  {language === 'fr' ? 'Effacer' : 'Clear'}
-                </Button>
-              )}
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-3">
-                {language === 'fr' ? 'Tri par' : 'Sort by'}
-              </h4>
-              <Select value={sortOption} onValueChange={handleSortChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={language === 'fr' ? "Trier par" : "Sort by"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">{language === 'fr' ? "Nouveautés" : "Newest"}</SelectItem>
-                  <SelectItem value="price-asc">{language === 'fr' ? "Prix croissant" : "Price (Low to High)"}</SelectItem>
-                  <SelectItem value="price-desc">{language === 'fr' ? "Prix décroissant" : "Price (High to Low)"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="text-sm font-medium mb-3">
-                {language === 'fr' ? 'Gamme de prix' : 'Price Range'}
-              </h4>
-              <Slider
-                defaultValue={priceRange}
-                value={priceRange}
-                max={1000}
-                step={10}
-                onValueChange={handlePriceChange}
-                className="my-5"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{priceRange[0]}</span>
-                <span>{priceRange[1]}</span>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="text-sm font-medium mb-3">
-                {language === 'fr' ? 'Matériaux' : 'Materials'}
-              </h4>
-              <ScrollArea className="h-[200px] pr-3">
-                <div className="space-y-2">
-                  {availableMaterials.map(material => (
-                    <div key={material} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`desktop-material-${material}`}
-                        checked={selectedMaterials.includes(material)}
-                        onChange={() => toggleMaterial(material)}
-                        className="h-4 w-4 rounded border-gray-300 text-furniture-taupe focus:ring-furniture-taupe"
-                      />
-                      <label
-                        htmlFor={`desktop-material-${material}`}
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        {material}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+      {/* Hero Section */}
+      <section className="relative h-[40vh] overflow-hidden">
+        {/* Hero Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
+            alt="Elegant furniture collection" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="container mx-auto px-4 relative z-10 h-full flex flex-col justify-center text-white">
+          <div className="max-w-2xl animate-fade-in">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold leading-tight mb-4">
+              {language === 'fr' ? 'Notre Collection' : 'Our Collection'}
+            </h1>
+            <p className="text-lg mb-6 text-white/90 max-w-xl">
+              {language === 'fr' 
+                ? 'Découvrez notre gamme complète de meubles de qualité pour chaque pièce de votre maison.' 
+                : 'Explore our full range of quality furniture for every room in your home.'}
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => window.scrollTo({ top: window.innerHeight * 0.4, behavior: 'smooth' })}
+                className="bg-white text-gray-900 hover:bg-gray-200 font-medium px-6 py-2 rounded-md transition-colors duration-300 flex items-center"
+              >
+                {language === 'fr' ? 'Explorer' : 'Browse Collection'} <ArrowRight size={16} className="ml-2" />
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Search and Mobile Filter Controls */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Input
-                type="text"
-                placeholder={language === 'fr' ? 'Rechercher des produits...' : 'Search products...'}
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full pr-10"
-              />
-            </div>
-            
-            <div className="lg:hidden">
-              <Button onClick={toggleFilters} variant="outline" className="w-full md:w-auto">
-                <Filter size={16} className="mr-2" />
-                {language === 'fr' ? 'Filtres' : 'Filters'}
-              </Button>
-            </div>
+      </section>
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Search and Filter Controls */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="w-full md:w-auto flex-1 max-w-md">
+            <Input
+              type="text"
+              placeholder={language === 'fr' ? 'Rechercher des produits...' : 'Search products...'}
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full"
+            />
           </div>
           
-          {/* Mobile Filters Drawer */}
-          {showFilters && (
-            <div className="fixed inset-0 bg-black/50 z-50 lg:hidden">
-              <div className="absolute right-0 top-0 h-full w-80 max-w-full bg-white shadow-xl animate-slide-in-right">
-                <div className="p-5 space-y-5 h-full flex flex-col">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-serif text-lg font-medium">
-                      {language === 'fr' ? 'Filtres' : 'Filters'}
-                    </h3>
-                    <button onClick={toggleFilters} className="p-1 rounded-full hover:bg-muted">
-                      <X size={20} />
-                    </button>
-                  </div>
-                  
-                  <ScrollArea className="flex-1 pr-3">
-                    <div className="space-y-6">
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">
-                          {language === 'fr' ? 'Tri par' : 'Sort by'}
-                        </h4>
-                        <Select value={sortOption} onValueChange={handleSortChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={language === 'fr' ? "Trier par" : "Sort by"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="newest">{language === 'fr' ? "Nouveautés" : "Newest"}</SelectItem>
-                            <SelectItem value="price-asc">{language === 'fr' ? "Prix croissant" : "Price (Low to High)"}</SelectItem>
-                            <SelectItem value="price-desc">{language === 'fr' ? "Prix décroissant" : "Price (High to Low)"}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">
-                          {language === 'fr' ? 'Gamme de prix' : 'Price Range'}
-                        </h4>
-                        <Slider
-                          defaultValue={priceRange}
-                          value={priceRange}
-                          max={1000}
-                          step={10}
-                          onValueChange={handlePriceChange}
-                          className="my-5"
-                        />
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>{priceRange[0]}</span>
-                          <span>{priceRange[1]}</span>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">
-                          {language === 'fr' ? 'Matériaux' : 'Materials'}
-                        </h4>
-                        <div className="space-y-2">
-                          {availableMaterials.map(material => (
-                            <div key={material} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`mobile-material-${material}`}
-                                checked={selectedMaterials.includes(material)}
-                                onChange={() => toggleMaterial(material)}
-                                className="h-4 w-4 rounded border-gray-300 text-furniture-taupe focus:ring-furniture-taupe"
-                              />
-                              <label
-                                htmlFor={`mobile-material-${material}`}
-                                className="text-sm font-medium cursor-pointer"
-                              >
-                                {material}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                  
-                  <div className="flex gap-3 pt-3 border-t">
-                    <Button variant="ghost" onClick={clearFilters} className="w-1/2">
-                      {language === 'fr' ? 'Effacer' : 'Clear'}
-                    </Button>
-                    <Button onClick={toggleFilters} className="w-1/2">
-                      {language === 'fr' ? 'Appliquer' : 'Apply'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Active Filters */}
-          {(selectedMaterials.length > 0 || priceRange[0] > 0 || priceRange[1] < 1000) && (
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-sm font-medium">
-                  {language === 'fr' ? 'Filtres actifs:' : 'Active filters:'}
+          <div className="flex items-center gap-4">
+            <Select value={sortOption} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={language === 'fr' ? 'Trier par' : 'Sort by'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">
+                  {language === 'fr' ? 'Plus récent' : 'Newest'}
+                </SelectItem>
+                <SelectItem value="price_low">
+                  {language === 'fr' ? 'Prix: croissant' : 'Price: Low to High'}
+                </SelectItem>
+                <SelectItem value="price_high">
+                  {language === 'fr' ? 'Prix: décroissant' : 'Price: High to Low'}
+                </SelectItem>
+                <SelectItem value="name_asc">
+                  {language === 'fr' ? 'Nom: A-Z' : 'Name: A-Z'}
+                </SelectItem>
+                <SelectItem value="name_desc">
+                  {language === 'fr' ? 'Nom: Z-A' : 'Name: Z-A'}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              className={cn(
+                "md:hidden",
+                (selectedMaterials.length > 0 || selectedCategories.length > 0) && "border-primary text-primary"
+              )}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter size={16} className="mr-2" />
+              {language === 'fr' ? 'Filtres' : 'Filters'}
+              {(selectedMaterials.length > 0 || selectedCategories.length > 0) && 
+                <span className="ml-1 text-xs bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center">
+                  {selectedMaterials.length + selectedCategories.length}
                 </span>
-                
-                {selectedMaterials.map(material => (
-                  <span 
-                    key={material}
-                    className="inline-flex items-center bg-furniture-beige text-furniture-brown rounded-full px-3 py-1 text-xs"
-                  >
-                    {material}
-                    <button 
-                      onClick={() => toggleMaterial(material)}
-                      className="ml-1 text-furniture-brown/70 hover:text-furniture-brown"
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
-                
-                {(priceRange[0] > 0 || priceRange[1] < 1000) && (
-                  <span className="inline-flex items-center bg-furniture-beige text-furniture-brown rounded-full px-3 py-1 text-xs">
-                    {language === 'fr' ? 'Prix:' : 'Price:'} {priceRange[0]} - {priceRange[1]}
-                    <button 
-                      onClick={() => setPriceRange([0, 1000])}
-                      className="ml-1 text-furniture-brown/70 hover:text-furniture-brown"
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Product Listing */}
-          {loading && (
-            <div className="text-center py-20">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-furniture-taupe border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
-                <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                  {language === 'fr' ? 'Chargement...' : 'Loading...'}
-                </span>
-              </div>
-              <p className="mt-4 text-muted-foreground">
-                {language === 'fr' ? 'Chargement des produits...' : 'Loading products...'}
-              </p>
-            </div>
-          )}
-          
-          {error && (
-            <div className="text-center py-12">
-              <p className="text-red-500">{error}</p>
-              <Button onClick={fetchFilteredProducts} className="mt-4">
-                {language === 'fr' ? 'Réessayer' : 'Try Again'}
-              </Button>
-            </div>
-          )}
-          
-          {!loading && !error && products.length === 0 && (
-            <div className="text-center py-16 bg-muted/30 rounded-lg">
-              <div className="max-w-md mx-auto">
-                <h3 className="text-xl font-serif mb-2">
-                  {language === 'fr' ? 'Aucun produit trouvé' : 'No products found'}
+              }
+            </Button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <aside className={cn(
+            "w-full md:w-64 shrink-0 transition-all",
+            showFilters ? "block" : "hidden md:block"
+          )}>
+            <div className="bg-card rounded-lg border p-4 sticky top-24">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-lg">
+                  {language === 'fr' ? 'Filtres' : 'Filters'}
                 </h3>
-                <p className="text-muted-foreground mb-6">
-                  {language === 'fr' 
-                    ? 'Nous n\'avons trouvé aucun produit correspondant à vos critères de recherche.' 
-                    : 'We couldn\'t find any products matching your search criteria.'}
-                </p>
-                <Button onClick={clearFilters}>
-                  {language === 'fr' ? 'Effacer les filtres' : 'Clear Filters'}
+                
+                {(selectedMaterials.length > 0 || selectedCategories.length > 0) && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
+                    <X size={14} className="mr-1" />
+                    {language === 'fr' ? 'Effacer' : 'Clear'}
+                  </Button>
+                )}
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <X size={18} />
                 </Button>
               </div>
+              
+              <Accordion type="multiple" defaultValue={["categories", "materials"]}>
+                {/* Categories Filter */}
+                <AccordionItem value="categories">
+                  <AccordionTrigger className="text-sm font-medium py-2">
+                    {language === 'fr' ? 'Catégories' : 'Categories'}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ScrollArea className="h-[200px] pr-3">
+                      <div className="space-y-2">
+                        {categories.map((category) => (
+                          <div key={category.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`category-${category.name}`} 
+                              checked={selectedCategories.includes(category.name)}
+                              onCheckedChange={() => handleCategoryToggle(category.name)}
+                            />
+                            <label 
+                              htmlFor={`category-${category.id}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {category.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <Separator className="my-2" />
+                
+                {/* Materials Filter */}
+                <AccordionItem value="materials">
+                  <AccordionTrigger className="text-sm font-medium py-2">
+                    {language === 'fr' ? 'Matériaux' : 'Materials'}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ScrollArea className="h-[200px] pr-3">
+                      <div className="space-y-2">
+                        {availableMaterials.map((material) => (
+                          <div key={material} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`material-${material}`} 
+                              checked={selectedMaterials.includes(material)}
+                              onCheckedChange={() => handleMaterialToggle(material)}
+                            />
+                            <label 
+                              htmlFor={`material-${material}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {material}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
-          )}
+          </aside>
           
-          {!loading && !error && products.length > 0 && (
-            <>
-              <p className="text-sm text-muted-foreground mb-4">
-                {language === 'fr' 
-                  ? `${products.length} produit${products.length > 1 ? 's' : ''} trouvé${products.length > 1 ? 's' : ''}` 
-                  : `${products.length} product${products.length > 1 ? 's' : ''} found`}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(product => (
-                  <ProductCard key={product.id} product={product} />
+          {/* Products Grid */}
+          <div className="flex-1">
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-muted rounded-lg h-[350px]"></div>
                 ))}
               </div>
-            </>
-          )}
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-destructive">{error}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchFilteredProducts}
+                  className="mt-4"
+                >
+                  {language === 'fr' ? 'Réessayer' : 'Try Again'}
+                </Button>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-medium mb-2">
+                  {language === 'fr' ? 'Aucun produit trouvé' : 'No products found'}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {language === 'fr' 
+                    ? 'Essayez d\'ajuster vos filtres ou votre recherche.' 
+                    : 'Try adjusting your filters or search term.'}
+                </p>
+                {(searchQuery || selectedMaterials.length > 0 || selectedCategories.length > 0) && (
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                  >
+                    {language === 'fr' ? 'Effacer les filtres' : 'Clear Filters'}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    onClick={() => navigate(`/product/${product.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

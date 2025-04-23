@@ -6,13 +6,14 @@ import { mapDatabaseProductToAppProduct } from '@/services/productMappers';
 // Define the filter options interface
 export interface ProductFilterOptions {
   category?: string;
+  categories?: string[];
   search?: string;
   featured?: boolean;
   limit?: number;
-  sortBy?: string;
+  sort?: string;
   minPrice?: number;
   maxPrice?: number;
-  materials?: string[]; // Added materials property
+  materials?: string[];
   colors?: string[];
 }
 
@@ -25,8 +26,13 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
       query = query.eq('category', options.category);
     }
     
+    // Filter by multiple categories if provided
+    if (options.categories && options.categories.length > 0) {
+      query = query.in('category', options.categories);
+    }
+    
     if (options.search) {
-      query = query.or(`name.ilike.%${options.search}%,description.ilike.%${options.search}%,category.ilike.%${options.search}%`);
+      query = query.or(`name.ilike.%${options.search}%,description.ilike.%${options.search}%`);
     }
     
     if (options.featured !== undefined) {
@@ -50,29 +56,32 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
     }
     
     // Apply sorting
-    if (options.sortBy) {
-      switch (options.sortBy) {
-        case 'price-asc':
-          query = query.order('price', { ascending: true });
-          break;
-        case 'price-desc':
-          query = query.order('price', { ascending: false });
-          break;
+    if (options.sort) {
+      switch (options.sort) {
         case 'newest':
           query = query.order('created_at', { ascending: false });
           break;
-        case 'rating':
-          query = query.order('rating', { ascending: false });
+        case 'price_low':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price_high':
+          query = query.order('price', { ascending: false });
+          break;
+        case 'name_asc':
+          query = query.order('name', { ascending: true });
+          break;
+        case 'name_desc':
+          query = query.order('name', { ascending: false });
           break;
         default:
           query = query.order('created_at', { ascending: false });
       }
     } else {
-      // Default sorting
+      // Default sorting by newest
       query = query.order('created_at', { ascending: false });
     }
     
-    // Apply limit
+    // Apply limit if specified
     if (options.limit) {
       query = query.limit(options.limit);
     }
@@ -114,13 +123,14 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   }
 };
 
-export const fetchProductsByCategory = async (categoryId: string, sortBy = 'newest'): Promise<Product[]> => {
+export const fetchProductsByCategory = async (categoryName: string, sortBy = 'newest'): Promise<Product[]> => {
   try {
+    console.log('fetchProductsByCategory called with:', categoryName);
     const products = await fetchProducts({
-      category: categoryId,
-      sortBy
+      categories: [categoryName],
+      sort: sortBy
     });
-    
+    console.log('Fetched products:', products);
     return products;
   } catch (error) {
     console.error('Error fetching products by category:', error);
