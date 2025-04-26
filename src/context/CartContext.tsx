@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Product, CartItem } from '@/types/product';
 import { toast } from 'sonner';
@@ -7,7 +6,7 @@ interface CartContextType {
   cartItems: CartItem[];
   cart: CartItem[]; // Add alias for backward compatibility
   totalPrice: number; // Add totalPrice property
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number, selectedColor?: string, selectedSize?: string) => void;
   removeFromCart: (productId: string) => void;
   updateCartItemQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -44,16 +43,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Product, quantity = 1, selectedColor?: string, selectedSize?: string) => {
     if (!product.inStock) {
       toast.error('Sorry, this product is out of stock.');
       return;
     }
 
     setCartItems((prevItems) => {
-      // Check if the product is already in the cart
+      // Check if the product with the same color and size is already in the cart
       const existingItemIndex = prevItems.findIndex(
-        (item) => item.product.id === product.id
+        (item) => 
+          item.product.id === product.id && 
+          item.selectedColor === selectedColor && 
+          item.selectedSize === selectedSize
       );
 
       // If it exists, update the quantity
@@ -66,7 +68,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       // Otherwise, add it as a new item
       toast.success(`Added to cart: ${product.name}`);
-      return [...prevItems, { product, quantity }];
+      return [...prevItems, { product, quantity, selectedColor, selectedSize }];
     });
   };
 

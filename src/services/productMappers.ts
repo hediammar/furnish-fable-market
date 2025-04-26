@@ -1,4 +1,3 @@
-
 import { Product } from '@/types/product';
 import { formatPrice } from '@/utils/currencyUtils';
 
@@ -26,6 +25,11 @@ export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
     featured: dbProduct.is_featured || false,
     new: dbProduct.is_new || false,
     discount: dbProduct.discount || 0,
-    formattedPrice: formatPrice(finalPrice)
+    formattedPrice: formatPrice(finalPrice),
+    colors: dbProduct.colors || [],
+    sizes: dbProduct.sizes || [],
+    weight: dbProduct.weight,
+    assembly: dbProduct.assembly,
+    warranty: dbProduct.warranty
   };
 };

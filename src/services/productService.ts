@@ -211,7 +211,12 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
         stock: product.stock || 0,
         is_featured: product.featured || false,
         is_new: product.new || false,
-        discount: product.discount || 0
+        discount: product.discount || 0,
+        colors: product.colors || [],
+        sizes: product.sizes || [],
+        weight: product.weight,
+        assembly: product.assembly,
+        warranty: product.warranty
       }])
       .select();
     

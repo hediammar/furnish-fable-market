@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -14,9 +13,16 @@ export interface Product {
   new?: boolean;
   discount?: number;
   formattedPrice?: string; // Added formattedPrice property
+  colors?: string[];
+  sizes?: string[];
+  weight?: string;
+  assembly?: string;
+  warranty?: string;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedColor?: string;
+  selectedSize?: string;
 }

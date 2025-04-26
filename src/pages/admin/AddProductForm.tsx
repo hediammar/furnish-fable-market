@@ -8,7 +8,7 @@ import { createProduct } from '@/services/productService';
 import { fetchCategories } from '@/services/categoryService';
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
-import { AlertCircle, ArrowLeft, Loader2, Save, Upload } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Loader2, Save, Upload, X, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,11 @@ const productSchema = z.object({
   inStock: z.boolean().default(true),
   featured: z.boolean().default(false),
   new: z.boolean().default(false),
+  colors: z.array(z.string()).default([]),
+  sizes: z.array(z.string()).default([]),
+  weight: z.string().optional(),
+  assembly: z.string().optional(),
+  warranty: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -84,6 +89,11 @@ const AddProductForm = () => {
       inStock: true,
       featured: false,
       new: true,
+      colors: [],
+      sizes: [],
+      weight: '',
+      assembly: '',
+      warranty: '',
     },
   });
   
@@ -102,6 +112,11 @@ const AddProductForm = () => {
         dimensions: data.dimensions,
         featured: data.featured,
         new: data.new,
+        colors: data.colors || [],
+        sizes: data.sizes || [],
+        weight: data.weight,
+        assembly: data.assembly,
+        warranty: data.warranty,
       };
       return createProduct(productData);
     },
@@ -380,6 +395,161 @@ const AddProductForm = () => {
                       <FormLabel>Dimensions</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., 120x80x75 cm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="colors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Colors</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          {field.value.map((color, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <input
+                                type="color"
+                                value={color}
+                                onChange={(e) => {
+                                  const newColors = [...field.value];
+                                  newColors[index] = e.target.value;
+                                  field.onChange(newColors);
+                                }}
+                                className="w-8 h-8 rounded cursor-pointer"
+                              />
+                              <Input
+                                value={color}
+                                onChange={(e) => {
+                                  const newColors = [...field.value];
+                                  newColors[index] = e.target.value;
+                                  field.onChange(newColors);
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newColors = field.value.filter((_, i) => i !== index);
+                                  field.onChange(newColors);
+                                }}
+                              >
+                                <X size={16} />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...field.value, '#000000'])}
+                          >
+                            <Plus size={16} className="mr-2" />
+                            Add Color
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sizes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sizes</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          {field.value.map((size, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <Input
+                                value={size}
+                                onChange={(e) => {
+                                  const newSizes = [...field.value];
+                                  newSizes[index] = e.target.value;
+                                  field.onChange(newSizes);
+                                }}
+                                className="flex-1"
+                                placeholder="e.g., Small, Medium, Large"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newSizes = field.value.filter((_, i) => i !== index);
+                                  field.onChange(newSizes);
+                                }}
+                              >
+                                <X size={16} />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...field.value, ''])}
+                          >
+                            <Plus size={16} className="mr-2" />
+                            Add Size
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weight</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 10kg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="assembly"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assembly</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Required, Not Required" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="warranty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Warranty</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 1 Year Warranty" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

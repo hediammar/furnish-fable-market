@@ -1,10 +1,18 @@
-
 import React, { useState } from 'react';
-import { Minus, Plus, Check, ShoppingCart } from 'lucide-react';
+import { Minus, Plus, Check, ShoppingCart, Info } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/types/product';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProductDetailProps {
   product: Product;
@@ -12,12 +20,16 @@ interface ProductDetailProps {
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState<string>(product.colors[0] || '');
+  const [selectedSize, setSelectedSize] = useState<string>(product.sizes[0] || '');
+  const [showAssembly, setShowAssembly] = useState(false);
+  const [showWarranty, setShowWarranty] = useState(false);
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const { language } = useLanguage();
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, selectedColor, selectedSize);
   };
 
   const incrementQuantity = () => {
@@ -73,6 +85,51 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
             <Separator />
 
+            {/* Color Selection */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium">{language === 'fr' ? 'Couleur' : 'Color'}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.colors.map((color) => (
+                    <Button
+                      key={color}
+                      variant={selectedColor === color ? 'default' : 'outline'}
+                      className="flex items-center gap-2"
+                      onClick={() => setSelectedColor(color)}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span>{color}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Size Selection */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium">{language === 'fr' ? 'Taille' : 'Size'}</h3>
+                <Select
+                  value={selectedSize}
+                  onValueChange={setSelectedSize}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder={language === 'fr' ? 'Sélectionner une taille' : 'Select a size'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {product.sizes.map((size) => (
+                      <SelectItem key={size} value={size}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-4">
               <h3 className="font-medium">{language === 'fr' ? 'Description' : 'Description'}</h3>
               <p className="text-muted-foreground">{product.description}</p>
@@ -91,6 +148,46 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <p className="text-muted-foreground">
                   {product.dimensions}
                 </p>
+              </div>
+            )}
+
+            {/* Assembly and Warranty Toggles */}
+            <div className="flex gap-4">
+              {product.assembly && (
+                <Toggle
+                  pressed={showAssembly}
+                  onPressedChange={setShowAssembly}
+                  className="flex items-center gap-2"
+                >
+                  <Info size={16} />
+                  {language === 'fr' ? 'Assemblage' : 'Assembly'}
+                </Toggle>
+              )}
+              
+              {product.warranty && (
+                <Toggle
+                  pressed={showWarranty}
+                  onPressedChange={setShowWarranty}
+                  className="flex items-center gap-2"
+                >
+                  <Info size={16} />
+                  {language === 'fr' ? 'Garantie' : 'Warranty'}
+                </Toggle>
+              )}
+            </div>
+
+            {/* Assembly and Warranty Details */}
+            {showAssembly && product.assembly && (
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">{language === 'fr' ? 'Informations d\'assemblage' : 'Assembly Information'}</h4>
+                <p className="text-muted-foreground">{product.assembly}</p>
+              </div>
+            )}
+
+            {showWarranty && product.warranty && (
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">{language === 'fr' ? 'Informations de garantie' : 'Warranty Information'}</h4>
+                <p className="text-muted-foreground">{product.warranty}</p>
               </div>
             )}
 
