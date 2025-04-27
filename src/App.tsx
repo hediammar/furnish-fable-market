@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +36,7 @@ import NewsletterBuilder from "./pages/admin/NewsletterBuilder";
 import HeroManagement from "./pages/admin/HeroManagement";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import EstimatesManagement from "./pages/admin/EstimatesManagement";
+import PartnerProjects from '@/pages/PartnerProjects';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +87,9 @@ const App = () => (
                       <Route path="estimates" element={<EstimatesManagement />} />
                     </Route>
                   </Route>
+                  
+                  {/* Partner Projects Route */}
+                  <Route path="/partners/:id" element={<PartnerProjects />} />
                   
                   {/* 404 Route */}
                   <Route path="*" element={<NotFound />} />

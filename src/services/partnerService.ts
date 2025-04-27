@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Partner } from '@/types/partner';
 import { toast } from 'sonner';
@@ -6,7 +5,7 @@ import { toast } from 'sonner';
 export const fetchPartners = async (): Promise<Partner[]> => {
   const { data, error } = await supabase
     .from('partners')
-    .select('*')
+    .select('id, name, logo, website, description, projects(*)')
     .order('name');
   
   if (error) {
@@ -20,7 +19,10 @@ export const fetchPartners = async (): Promise<Partner[]> => {
 export const fetchPartnerById = async (id: string): Promise<Partner> => {
   const { data, error } = await supabase
     .from('partners')
-    .select('*')
+    .select(`
+      *,
+      projects:projects(*)
+    `)
     .eq('id', id)
     .single();
   
@@ -73,11 +75,14 @@ export const createPartner = async (partner: Omit<Partner, 'id' | 'created_at' |
       }
     }
     
+    // Remove projects from the partner data before inserting
+    const { projects, ...partnerData } = partner;
+    
     // Create the partner record with the logo URL
     const { data, error } = await supabase
       .from('partners')
       .insert([{
-        ...partner,
+        ...partnerData,
         logo: logoUrl
       }])
       .select()

@@ -1,4 +1,3 @@
-
 import { Json } from '@/integrations/supabase/types';
 
 export interface Partner {
@@ -9,6 +8,14 @@ export interface Partner {
   description?: string;
   created_at?: string;
   updated_at?: string;
+  projects?: Project[];
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
 }
 
 // Define database schema types for type safety with Supabase
