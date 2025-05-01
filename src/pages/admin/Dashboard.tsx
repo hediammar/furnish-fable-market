@@ -1,8 +1,7 @@
-
 import React, { useEffect } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Package, ShoppingBag, Users, Tag, LayoutDashboard, LogOut, Image, Mail, FileText, Briefcase } from 'lucide-react';
+import { Package, ShoppingBag, Users, Tag, LayoutDashboard, LogOut, Image, Mail, FileText, Briefcase, Calendar } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -64,6 +63,7 @@ const AdminDashboard = () => {
     { title: 'Orders', icon: <ShoppingBag size={20} />, path: '/admin/orders' },
     { title: 'Categories', icon: <Tag size={20} />, path: '/admin/categories' },
     { title: 'Users', icon: <Users size={20} />, path: '/admin/users' },
+    { title: 'Appointments', icon: <Calendar size={20} />, path: '/admin/appointments' },
     { title: 'Hero Sections', icon: <Image size={20} />, path: '/admin/hero' },
     { title: 'Newsletter', icon: <Mail size={20} />, path: '/admin/newsletter' },
     { title: 'Partners', icon: <Briefcase size={20} />, path: '/admin/partners' },

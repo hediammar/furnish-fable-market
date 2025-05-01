@@ -37,71 +37,82 @@ import HeroManagement from "./pages/admin/HeroManagement";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import EstimatesManagement from "./pages/admin/EstimatesManagement";
 import PartnerProjects from '@/pages/PartnerProjects';
+import LoadingOverlay from './components/layout/LoadingOverlay';
+import { useState } from 'react';
+import AppointmentsPage from './pages/AppointmentsPage';
+import AppointmentsManagement from './pages/admin/AppointmentsManagement';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <HelmetProvider>
-        <AuthProvider>
-          <CartProvider>
-            <LanguageProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Header />
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/product/:id" element={<ProductPage />} />
-                  <Route path="/category/:id" element={<CategoryPage />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/checkout/success" element={<CheckoutSuccess />} />
-                  
-                  {/* Protected User Routes */}
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/orders" element={<OrdersPage />} />
-                    <Route path="/estimates" element={<EstimatesPage />} />
-                  </Route>
-                  
-                  {/* Protected Admin Routes */}
-                  <Route element={<ProtectedRoute requireAdmin />}>
-                    <Route path="/admin" element={<AdminDashboard />}>
-                      <Route index element={<Overview />} />
-                      <Route path="products" element={<ProductsManagement />} />
-                      <Route path="products/new" element={<AddProductForm />} />
-                      <Route path="products/edit/:id" element={<EditProductForm />} />
-                      <Route path="orders" element={<OrdersManagement />} />
-                      <Route path="categories" element={<CategoriesManagement />} />
-                      <Route path="users" element={<UsersManagement />} />
-                      <Route path="newsletter" element={<NewsletterBuilder />} />
-                      <Route path="hero" element={<HeroManagement />} />
-                      <Route path="partners" element={<PartnersManagement />} />
-                      <Route path="estimates" element={<EstimatesManagement />} />
+const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <HelmetProvider>
+          <AuthProvider>
+            <CartProvider>
+              <LanguageProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <LoadingOverlay onLoadingComplete={() => setIsLoading(false)} />
+                  <Header />
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/product/:id" element={<ProductPage />} />
+                    <Route path="/category/:id" element={<CategoryPage />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                    
+                    {/* Protected User Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/orders" element={<OrdersPage />} />
+                      <Route path="/estimates" element={<EstimatesPage />} />
+                      <Route path="/appointments" element={<AppointmentsPage />} />
                     </Route>
-                  </Route>
-                  
-                  {/* Partner Projects Route */}
-                  <Route path="/partners/:id" element={<PartnerProjects />} />
-                  
-                  {/* 404 Route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Footer />
-              </BrowserRouter>
-            </LanguageProvider>
-          </CartProvider>
-        </AuthProvider>
-      </HelmetProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+                    
+                    {/* Protected Admin Routes */}
+                    <Route element={<ProtectedRoute requireAdmin />}>
+                      <Route path="/admin" element={<AdminDashboard />}>
+                        <Route index element={<Overview />} />
+                        <Route path="products" element={<ProductsManagement />} />
+                        <Route path="products/new" element={<AddProductForm />} />
+                        <Route path="products/edit/:id" element={<EditProductForm />} />
+                        <Route path="orders" element={<OrdersManagement />} />
+                        <Route path="categories" element={<CategoriesManagement />} />
+                        <Route path="users" element={<UsersManagement />} />
+                        <Route path="newsletter" element={<NewsletterBuilder />} />
+                        <Route path="hero" element={<HeroManagement />} />
+                        <Route path="partners" element={<PartnersManagement />} />
+                        <Route path="estimates" element={<EstimatesManagement />} />
+                        <Route path="appointments" element={<AppointmentsManagement />} />
+                      </Route>
+                    </Route>
+                    
+                    {/* Partner Projects Route */}
+                    <Route path="/partners/:id" element={<PartnerProjects />} />
+                    
+                    {/* 404 Route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <Footer />
+                </BrowserRouter>
+              </LanguageProvider>
+            </CartProvider>
+          </AuthProvider>
+        </HelmetProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

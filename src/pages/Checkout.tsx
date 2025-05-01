@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { ShoppingBag, Truck, CheckCircle, Loader2 } from 'lucide-react';
+import { User } from '@/types/user';
 import {
   Form,
   FormControl,
@@ -36,7 +37,7 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 const Checkout: React.FC = () => {
   const { cartItems, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -46,11 +47,11 @@ const Checkout: React.FC = () => {
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
       email: user?.email || '',
-      phone: '',
-      address: '',
-      city: '',
-      zipCode: '',
-      country: '',
+      phone: profile?.phone_number || '',
+      address: profile?.address || '',
+      city: profile?.city || '',
+      zipCode: profile?.zip_code || '',
+      country: profile?.country || '',
     },
   });
 
@@ -192,7 +193,7 @@ const Checkout: React.FC = () => {
             
             <Card className="border-furniture-cream shadow-md">
               <CardHeader className="bg-furniture-beige bg-opacity-30 border-b">
-                <CardTitle>{language === 'fr' ? 'Informations de livraison' : 'Shipping Information'}</CardTitle>
+                <CardTitle>{language === 'fr' ? 'Informations d\'estimation' : 'Estimation Information'}</CardTitle>
                 <CardDescription>
                   {language === 'fr' ? 'Entrez vos coordonnées pour recevoir une estimation' : 'Enter your details to receive an estimate'}
                 </CardDescription>
@@ -313,9 +314,9 @@ const Checkout: React.FC = () => {
           <div className="space-y-6">
             <Card className="border-furniture-cream shadow-md">
               <CardHeader className="bg-furniture-beige bg-opacity-30 border-b">
-                <CardTitle>{language === 'fr' ? 'Résumé de la commande' : 'Order Summary'}</CardTitle>
+                <CardTitle>{language === 'fr' ? 'Résumé de l\'estimation' : 'Estimation Summary'}</CardTitle>
                 <CardDescription>
-                  {language === 'fr' ? 'Vérifiez les détails de votre commande' : 'Review your order details'}
+                  {language === 'fr' ? 'Vérifiez les détails de votre estimation' : 'Review your estimation details'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">

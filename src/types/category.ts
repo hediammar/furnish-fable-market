@@ -1,4 +1,3 @@
-
 export interface Category {
   id: string;
   name: string;
@@ -7,4 +6,5 @@ export interface Category {
   created_at?: string | null;
   updated_at?: string;
   productCount?: number;
+  slug?: string;
 }

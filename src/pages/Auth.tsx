@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -28,7 +27,9 @@ const registerSchema = z.object({
   confirmPassword: z.string().min(6, { message: 'Please confirm your password' }),
   fullName: z.string().min(2, { message: 'Full name is required' }),
   phoneNumber: z.string().min(5, { message: 'Phone number is required' }),
+  address: z.string().min(5, { message: 'Address is required' }),
   city: z.string().min(2, { message: 'City is required' }),
+  zipCode: z.string().min(4, { message: 'Zip code is required' }),
   country: z.string().min(2, { message: 'Country is required' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -72,7 +73,9 @@ const Auth = () => {
       confirmPassword: '',
       fullName: '',
       phoneNumber: '',
+      address: '',
       city: '',
+      zipCode: '',
       country: '',
     },
   });
@@ -100,12 +103,14 @@ const Auth = () => {
         data: {
           full_name: values.fullName,
           phone_number: values.phoneNumber,
+          address: values.address,
           city: values.city,
+          zip_code: values.zipCode,
           country: values.country,
         },
       };
       
-      await signUp(values.email, values.password);
+      await signUp(values.email, values.password, options);
       toast({
         title: 'Registration successful',
         description: 'Your account has been created. Please check your email to verify your account.',
@@ -306,17 +311,47 @@ const Auth = () => {
                     
                     <FormField
                       control={registerForm.control}
-                      name="city"
+                      name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>City</FormLabel>
+                          <FormLabel>Address</FormLabel>
                           <FormControl>
-                            <Input placeholder="New York" {...field} />
+                            <Input placeholder="123 Main St" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input placeholder="New York" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={registerForm.control}
+                        name="zipCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Zip Code</FormLabel>
+                            <FormControl>
+                              <Input placeholder="10001" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     
                     <FormField
                       control={registerForm.control}

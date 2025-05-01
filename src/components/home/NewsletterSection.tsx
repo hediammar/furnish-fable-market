@@ -71,7 +71,7 @@ const NewsletterSection: React.FC = () => {
               </div>
               <Button 
                 type="submit"
-                className="bg-furniture-taupe hover:bg-furniture-brown"
+                className="bg-[#d2ac35] hover:bg-black"
                 disabled={isLoading}
               >
                 {isLoading ? "..." : t('subscribe')}

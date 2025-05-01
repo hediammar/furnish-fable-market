@@ -66,7 +66,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                 className="btn-secondary"
                 onClick={onClose}
               >
-                {language === 'fr' ? 'Continuer les achats' : 'Continue Shopping'}
+                {language === 'fr' ? 'Découvrir plus de meubles' : 'Discover more furniture'}
               </button>
             </div>
           ) : (

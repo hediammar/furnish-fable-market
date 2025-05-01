@@ -8,6 +8,7 @@ import CategorySection from '@/components/home/CategorySection';
 import ReviewsCarousel from '@/components/home/ReviewsCarousel';
 import NewsletterSection from '@/components/home/NewsletterSection';
 import PartnersCarousel from '@/components/home/PartnersCarousel';
+import GoogleReviews from '@/components/home/GoogleReviews';
 import { fetchProducts } from '@/services/productService';
 import { fetchCategories } from '@/services/categoryService';
 import { fetchPartners } from '@/services/partnerService';
@@ -137,9 +138,9 @@ const Index: React.FC = () => {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-150px" }}
+          viewport={{ once: true, margin: "0px" }}
           variants={sectionVariants}
-          className="relative z-20 py-16"
+          className="relative z-20"
         >
           <FeaturedProducts 
             title={language === 'fr' ? "Collection en Vedette" : "Featured Collection"} 
@@ -154,9 +155,9 @@ const Index: React.FC = () => {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-150px" }}
+          viewport={{ once: true, margin: "0px" }}
           variants={sectionVariants}
-          className="relative z-20 py-16"
+          className="relative z-20"
         >
           <CategorySection 
             title={language === 'fr' ? "Nos Catégories" : "Our Categories"} 
@@ -171,9 +172,9 @@ const Index: React.FC = () => {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-150px" }}
+          viewport={{ once: true, margin: "0px" }}
           variants={sectionVariants}
-          className="relative z-20 py-16"
+          className="relative z-20"
         >
           <PartnersCarousel partners={partners} />
         </motion.div>
@@ -181,9 +182,9 @@ const Index: React.FC = () => {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-150px" }}
+          viewport={{ once: true, margin: "0px" }}
           variants={reviewsVariants}
-          className="relative z-30 py-16"
+          className="relative z-30"
         >
           <ReviewsCarousel />
         </motion.div>
@@ -191,11 +192,21 @@ const Index: React.FC = () => {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-150px" }}
+          viewport={{ once: true, margin: "0px" }}
           variants={newsletterVariants}
-          className="relative z-20 py-16"
+          className="relative z-20"
         >
           <NewsletterSection />
+        </motion.div>
+
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "0px" }}
+          variants={sectionVariants}
+          className="relative z-20"
+        >
+          <GoogleReviews />
         </motion.div>
       </div>
     </AnimatePresence>

@@ -15,7 +15,7 @@ export type TranslationKey =
   | 'cart'
   | 'checkout'
   | 'profile'
-  | 'orders'
+  | 'estimates'
   | 'signIn'
   | 'signOut'
   | 'addToCart'
@@ -32,7 +32,8 @@ export type TranslationKey =
   | 'address'
   | 'phone'
   | 'email'
-  | 'openingHours';
+  | 'openingHours'
+  | 'subscriptionSuccess';
 
 type Translations = {
   [key in Language]: {
@@ -51,7 +52,7 @@ const translations: Translations = {
     cart: 'Panier',
     checkout: 'Commander',
     profile: 'Mon Profil',
-    orders: 'Mes Commandes',
+    estimates: 'Mes Devis',
     signIn: 'Se Connecter',
     signOut: 'Se Déconnecter',
     addToCart: 'Ajouter au panier',
@@ -68,10 +69,12 @@ const translations: Translations = {
     address: 'Adresse',
     phone: 'Téléphone',
     email: 'Email',
-    openingHours: 'Heures d\'ouverture'
+    openingHours: 'Heures d\'ouverture',
+    subscriptionSuccess: 'Vous êtes maintenant abonné à notre newsletter.',
   },
   en: {
     home: 'Home',
+    email: 'Email',
     products: 'Products',
     about: 'About',
     contact: 'Contact',
@@ -80,7 +83,7 @@ const translations: Translations = {
     cart: 'Cart',
     checkout: 'Checkout',
     profile: 'My Profile',
-    orders: 'My Orders',
+    estimates: 'My Estimates',
     signIn: 'Sign In',
     signOut: 'Sign Out',
     addToCart: 'Add to Cart',
@@ -96,8 +99,8 @@ const translations: Translations = {
     contactUs: 'Contact Us',
     address: 'Address',
     phone: 'Phone',
-    email: 'Email',
-    openingHours: 'Opening Hours'
+    openingHours: 'Opening Hours',
+    subscriptionSuccess: 'You are now subscribed to our newsletter.',
   }
 };
 

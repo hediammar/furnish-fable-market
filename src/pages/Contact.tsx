@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,7 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, SeparatorHorizontal, LucideSeparatorHorizontal } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { ArrowRight } from 'lucide-react';
+import { AppointmentModal } from '@/components/AppointmentModal';
 
 const contactFormSchema = z.object({
   name: z.string().min(2, { message: 'Le nom doit contenir au moins 2 caractères' }),
@@ -23,7 +25,10 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const { language } = useLanguage();
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
@@ -32,6 +37,56 @@ const Contact = () => {
       message: ''
     }
   });
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+
+  // Initialize Google Maps
+  useEffect(() => {
+    const initMap = () => {
+      if (!mapRef.current) return;
+
+      const location = { lat: 36.408308, lng: 10.638848 };
+      
+      const map = new google.maps.Map(mapRef.current, {
+        center: location,
+        zoom: 15,
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          }
+        ]
+      });
+
+      const marker = new google.maps.Marker({
+        position: location,
+        map: map,
+        title: "Meubles Karim",
+        animation: google.maps.Animation.DROP
+      });
+
+      mapInstance.current = map;
+      markerRef.current = marker;
+    };
+
+    // Load Google Maps script
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAR3cHRB1E9drUjG175BcyMIvFo2G9VN6g`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
+    }
+
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
+    };
+  }, []);
 
   const onSubmit = async (data: ContactFormValues) => {
     setIsSubmitting(true);
@@ -58,19 +113,51 @@ const Contact = () => {
   };
 
   return (
-    <div className="container-custom py-12">
+    <div className="min-h-screen">
       <Helmet>
         <title>Contact | Meubles Karim</title>
       </Helmet>
-
+ {/* Hero Section */}
+ <section className="relative h-[40vh] overflow-hidden">
+        {/* Hero Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
+            alt="Elegant furniture collection" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="container mx-auto px-4 relative z-10 h-full flex flex-col justify-center text-white">
+          <div className="max-w-2xl animate-fade-in">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold leading-tight mb-4">
+              {language === 'fr' ? 'Contactez-Nous' : 'Contact Us'}
+            </h1>
+            <p className="text-lg mb-6 text-white/90 max-w-xl">
+              {language === 'fr' 
+                ? 'Nous sommes à votre disposition pour toute question concernant nos produits, services ou pour planifier une visite à notre showroom.' 
+                : 'We are here to answer any questions you may have about our products, services, or to schedule a visit to our showroom.'}
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => window.scrollTo({ top: window.innerHeight * 0.4, behavior: 'smooth' })}
+                className="bg-white text-gray-900 hover:bg-gray-200 font-medium px-6 py-2 rounded-md transition-colors duration-300 flex items-center"
+              >
+                {language === 'fr' ? 'Contactez-Nous' : 'Contact Us'} <ArrowRight size={16} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <Separator className="my-12" />
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-serif mb-8 text-center">Contactez-nous</h1>
+       
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div className="space-y-8">
-            <p className="text-lg">
-              Nous sommes à votre disposition pour toute question concernant nos produits, services ou pour planifier une visite à notre showroom.
-            </p>
+            
             
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
@@ -109,17 +196,11 @@ const Contact = () => {
             
             <div className="mt-8">
               <h3 className="text-xl font-serif mb-4">Notre emplacement</h3>
-              <div className="rounded-lg overflow-hidden h-64 bg-gray-200">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3232.6918094243013!2d10.590197715303652!3d36.40281319776841!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x13029940e641ba31%3A0xdbdfc44a3927f76e!2sHammamet!5e0!3m2!1sen!2sus!4v1627382727269!5m2!1sen!2sus"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={true}
-                  loading="lazy"
-                  title="Carte Meubles Karim"
-                ></iframe>
-              </div>
+              <div 
+                ref={mapRef} 
+                className="rounded-lg overflow-hidden h-64 bg-gray-200"
+                style={{ height: '400px' }}
+              />
             </div>
           </div>
           
@@ -195,11 +276,20 @@ const Contact = () => {
           <p className="mb-6">
             Nous vous invitons à visiter notre showroom à Hammamet pour découvrir notre collection de meubles et bénéficier des conseils de nos experts.
           </p>
-          <Button variant="outline" size="lg">
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => setIsAppointmentModalOpen(true)}
+          >
             Prendre rendez-vous
           </Button>
         </div>
+        <Separator className="my-12" />
       </div>
+      <AppointmentModal 
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+      />
     </div>
   );
 };

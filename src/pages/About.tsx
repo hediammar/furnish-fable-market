@@ -1,4 +1,3 @@
-
 import { Helmet } from 'react-helmet-async';
 import { Separator } from '@/components/ui/separator';
 
@@ -66,46 +65,63 @@ const About = () => {
           
           {/* Meet the Team section */}
           <h2 className="text-3xl font-serif mb-8 text-center font-light tracking-wide">Notre Équipe</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-            <div className="text-center">
-              <div className="relative mb-4 mx-auto w-48 h-48 overflow-hidden rounded-full border-4 border-furniture-taupe/20">
-                <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop" 
-                  alt="Karim Belhadjali" 
-                  className="absolute inset-0 w-full h-full object-cover"
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-10">
+            {[
+              {
+                name: 'Karim Belhadjali',
+                role: 'Fondateur & Directeur',
+                img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop',
+                info: "Pionnier de la vision et de l'excellence dans l'industrie du meuble depuis plus de 30 ans.",
+                color: 'bg-yellow-100',
+              },
+              {
+                name: 'Sonia Trabelsi',
+                role: 'Directrice Artistique',
+                img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop',
+                info: "Experte en design d'intérieur, elle façonne l'esthétique de nos collections avec passion et créativité.",
+                color: 'bg-purple-100',
+              },
+              {
+                name: 'Mehdi Khelifi',
+                role: 'Maître Artisan',
+                img: 'https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?q=80&w=2076&auto=format&fit=crop',
+                info: "Avec plus de 25 ans d'expérience dans le travail du bois, il supervise la production de chaque pièce.",
+                color: 'bg-green-100',
+              },
+              {
+                name: 'Nouha Ben Salah',
+                role: 'Responsable Clientèle',
+                img: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=1974&auto=format&fit=crop',
+                info: "Toujours à l'écoute, elle veille à la satisfaction de chaque client avec professionnalisme.",
+                color: 'bg-cyan-100',
+              },
+            ].map((member, idx) => (
+              <div
+                key={member.name}
+                className={`group relative rounded-2xl overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 cursor-pointer ${member.color}`}
+                style={{ minHeight: '260px', height: '260px' }}
+              >
+                {/* Full card image */}
+                <img
+                  src={member.img}
+                  alt={member.name}
+                  className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110 z-0"
                 />
+                {/* Fade-in gradient from bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-90 z-10 transition-opacity duration-300" />
+                {/* Name and role at the bottom */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
+                  <h3 className="text-white text-lg font-semibold mb-1 drop-shadow-lg">{member.name}</h3>
+                  <p className="text-white text-xs mb-1 italic drop-shadow-lg">{member.role}</p>
+                </div>
+                {/* Hover info overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                  <h3 className="text-white text-lg font-semibold mb-2">{member.name}</h3>
+                  <p className="text-furniture-taupe text-xs mb-2 italic">{member.role}</p>
+                  <p className="text-white text-xs">{member.info}</p>
+                </div>
               </div>
-              <h3 className="font-serif text-xl mb-1">Karim Belhadjali</h3>
-              <p className="text-furniture-brown text-sm mb-3 italic">Fondateur & Directeur</p>
-              <p className="text-gray-600 text-sm">Pionnier de la vision et de l'excellence dans l'industrie du meuble depuis plus de 30 ans.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="relative mb-4 mx-auto w-48 h-48 overflow-hidden rounded-full border-4 border-furniture-taupe/20">
-                <img 
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop" 
-                  alt="Sonia Trabelsi" 
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="font-serif text-xl mb-1">Sonia Trabelsi</h3>
-              <p className="text-furniture-brown text-sm mb-3 italic">Directrice Artistique</p>
-              <p className="text-gray-600 text-sm">Experte en design d'intérieur, elle façonne l'esthétique de nos collections avec passion et créativité.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="relative mb-4 mx-auto w-48 h-48 overflow-hidden rounded-full border-4 border-furniture-taupe/20">
-                <img 
-                  src="https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?q=80&w=2076&auto=format&fit=crop" 
-                  alt="Mehdi Khelifi" 
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="font-serif text-xl mb-1">Mehdi Khelifi</h3>
-              <p className="text-furniture-brown text-sm mb-3 italic">Maître Artisan</p>
-              <p className="text-gray-600 text-sm">Avec plus de 25 ans d'expérience dans le travail du bois, il supervise la production de chaque pièce.</p>
-            </div>
+            ))}
           </div>
         </div>
       </div>

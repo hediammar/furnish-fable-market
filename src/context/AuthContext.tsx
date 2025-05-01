@@ -1,25 +1,38 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/supabase';
 import { useToast } from '@/components/ui/use-toast';
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, options?: { data: any }) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-};
+  isAuthenticated: boolean;
+  loading: boolean;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  profile: null,
+  isLoading: true,
+  isAdmin: false,
+  signIn: async () => {},
+  signUp: async () => {},
+  signOut: async () => {},
+  refreshProfile: async () => {},
+  isAuthenticated: false,
+  loading: true,
+});
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -179,11 +192,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, options?: { data: any }) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: options?.data
+        }
       });
 
       if (error) {
@@ -234,23 +250,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        isLoading,
-        isAdmin,
-        signIn,
-        signUp,
-        signOut,
-        refreshProfile,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    session,
+    profile,
+    isLoading,
+    isAdmin,
+    signIn,
+    signUp,
+    signOut,
+    refreshProfile,
+    isAuthenticated: !!user,
+    loading: isLoading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

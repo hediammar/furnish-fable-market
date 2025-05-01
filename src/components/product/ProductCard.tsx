@@ -27,39 +27,37 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     >
       {/* Product Image */}
       <div className="relative overflow-hidden">
-        <Link to={`/product/${product.id}`}>
-          <img 
-            src={product.images[0]} 
-            alt={product.name}
-            className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          
-          {/* Overlay with quick actions */}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
-            <button 
-              onClick={handleAddToCart}
-              className="bg-white text-furniture-brown hover:bg-furniture-taupe hover:text-white p-3 rounded-full transition-colors"
-            >
-              <ShoppingCart size={20} />
-            </button>
-            <Link 
-              to={`/product/${product.id}`} 
-              className="bg-white text-furniture-brown hover:bg-furniture-taupe hover:text-white p-3 rounded-full transition-colors"
-            >
-              <Eye size={20} />
-            </Link>
-          </div>
-        </Link>
+        <img 
+          src={product.images[0]} 
+          alt={product.name}
+          className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        
+        {/* Overlay with quick actions */}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2">
+          <button 
+            onClick={handleAddToCart}
+            className="bg-white text-furniture-brown hover:bg-furniture-taupe hover:text-white p-3 rounded-full transition-colors"
+          >
+            <ShoppingCart size={20} />
+          </button>
+          <Link 
+            to={`/product/${product.id}`} 
+            className="bg-white text-furniture-brown hover:bg-furniture-taupe hover:text-white p-3 rounded-full transition-colors"
+          >
+            <Eye size={20} />
+          </Link>
+        </div>
         
         {/* Tags */}
         <div className="absolute top-3 left-3 flex space-x-2">
           {product.new && (
-            <span className="bg-furniture-teal text-white text-xs font-bold px-2 py-1 rounded">
+            <span className="bg-[#d2ac35] text-black text-xs font-bold px-2 py-1 rounded">
               {language === 'fr' ? 'NOUVEAU' : 'NEW'}
             </span>
           )}
           {product.featured && (
-            <span className="bg-furniture-orange text-white text-xs font-bold px-2 py-1 rounded">
+            <span className="bg-[#000000] text-[#d2ac35] text-xs font-bold px-2 py-1 rounded">
               {language === 'fr' ? 'EN VEDETTE' : 'FEATURED'}
             </span>
           )}

@@ -327,7 +327,7 @@ const Products: React.FC = () => {
                   </AccordionContent>
                 </AccordionItem>
                 
-                <Separator className="my-2" />
+                
                 
                 {/* Materials Filter */}
                 <AccordionItem value="materials">

@@ -24,8 +24,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({ title, subtitle, cate
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((category) => (
             <Link 
-              key={category.id}
-              to={`/category/${category.id}`}
+              key={category.name}
+              to={`/category/${category.name}`}
               className="group relative h-64 rounded-lg overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10 transition-opacity duration-300 group-hover:opacity-90"></div>

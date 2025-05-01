@@ -8,22 +8,29 @@ const LanguageSwitcher: React.FC = () => {
 
   return (
     <div className="flex items-center space-x-2">
-      <Button 
-        variant={language === 'fr' ? 'default' : 'outline'} 
-        size="sm" 
-        onClick={() => setLanguage('fr')}
-        className="text-xs px-2 py-1 h-8"
-      >
-        FR
-      </Button>
-      <Button 
-        variant={language === 'en' ? 'default' : 'outline'} 
-        size="sm" 
-        onClick={() => setLanguage('en')}
-        className="text-xs px-2 py-1 h-8"
-      >
-        EN
-      </Button>
+      <Button
+  size="sm"
+  onClick={() => setLanguage('fr')}
+  className="w-8 h-8 p-0 rounded-full bg-no-repeat bg-center bg-cover border"
+  style={{
+    backgroundImage: "url('/flags/icons8-france-48.png')",
+    border: language !== 'fr' ? '5px solid #ccc' : 'none',
+  }}
+>
+
+</Button>
+
+<Button
+  size="sm"
+  onClick={() => setLanguage('en')}
+  className="w-8 h-8 p-0 rounded-full bg-no-repeat bg-center bg-cover border"
+  style={{
+    backgroundImage: "url('/flags/icons8-english-48.png')",
+    border: language !== 'en' ? '5px solid #ccc' : 'none',
+  }}
+>
+</Button>
+
     </div>
   );
 };

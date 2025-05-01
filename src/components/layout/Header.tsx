@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CartSidebar from '../cart/CartSidebar';
 import { useCart } from '@/context/CartContext';
@@ -147,7 +147,13 @@ const Header: React.FC = () => {
                     <Link to="/profile">{t('profile')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/orders">{t('orders')}</Link>
+                    <Link to="/appointments">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span>{language === 'fr' ? 'Mes Rendez-vous' : 'My Appointments'}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/estimates">{t('estimates')}</Link>
                   </DropdownMenuItem>
                   {isAdmin && (
                     <>
@@ -250,11 +256,18 @@ const Header: React.FC = () => {
                     {t('profile')}
                   </Link>
                   <Link 
-                    to="/orders" 
+                    to="/appointments" 
                     className="nav-link text-lg font-medium py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {t('orders')}
+                    {language === 'fr' ? 'Mes Rendez-vous' : 'My Appointments'}
+                  </Link>
+                  <Link 
+                    to="/estimates" 
+                    className="nav-link text-lg font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('estimates')}
                   </Link>
                   {isAdmin && (
                     <Link 

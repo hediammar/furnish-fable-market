@@ -17,43 +17,31 @@ const CategoryPage = () => {
   const [sort, setSort] = useState('newest');
   const navigate = useNavigate();
   
-  // Fetch all categories to check if we need to search by slug
+  // Fetch all categories
   const { data: allCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
   
-  // Find category by ID or name/slug
-  const findCategoryId = (categoryIdentifier: string, categories: Category[]) => {
-    // Check if it's a valid UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    
-    if (uuidRegex.test(categoryIdentifier)) {
-      return categoryIdentifier;
-    }
-    
-    // If not a UUID, try to match by name (case insensitive)
-    const category = categories?.find(cat => 
-      cat.name.toLowerCase() === categoryIdentifier.toLowerCase() ||
-      cat.id === categoryIdentifier
+  // Find category by name/slug
+  const findCategory = (categoryIdentifier: string, categories: Category[]) => {
+    // First try to find by exact name match
+    const exactMatch = categories?.find(cat => 
+      cat.name.toLowerCase() === categoryIdentifier.toLowerCase()
     );
     
-    return category?.id;
+    if (exactMatch) return exactMatch;
+    
+    // If no exact match, try to find by slug or hyphenated name
+    const normalizedIdentifier = categoryIdentifier.toLowerCase().replace(/-/g, ' ');
+    return categories?.find(cat => 
+      cat.name.toLowerCase() === normalizedIdentifier ||
+      cat.slug?.toLowerCase() === categoryIdentifier.toLowerCase()
+    );
   };
   
-  // Get the proper category ID
-  const categoryId = allCategories ? findCategoryId(id as string, allCategories) : null;
-  
-  // Fetch category information
-  const { 
-    data: category,
-    isLoading: categoryLoading,
-    error: categoryError
-  } = useQuery({
-    queryKey: ['category', categoryId],
-    queryFn: () => categoryId ? fetchCategoryById(categoryId) : null,
-    enabled: !!categoryId
-  });
+  // Get the category
+  const category = allCategories ? findCategory(id as string, allCategories) : null;
   
   // Fetch products for the category
   const {
@@ -61,9 +49,9 @@ const CategoryPage = () => {
     isLoading: productsLoading,
     error: productsError
   } = useQuery({
-    queryKey: ['categoryProducts', categoryId, sort],
-    queryFn: () => categoryId ? fetchProductsByCategory(categoryId, sort) : Promise.resolve([]),
-    enabled: !!categoryId
+    queryKey: ['categoryProducts', category?.name, sort],
+    queryFn: () => category ? fetchProductsByCategory(category.name, sort) : Promise.resolve([]),
+    enabled: !!category
   });
   
   // Format for meta title and description
@@ -72,11 +60,11 @@ const CategoryPage = () => {
     `Explorez notre collection de ${category.name}. Des meubles de qualité pour votre maison chez Meubles Karim.` : 
     'Parcourez nos collections de meubles par catégorie chez Meubles Karim.';
   
-  if (categoryLoading || productsLoading || (allCategories && !categoryId)) {
+  if (productsLoading || (allCategories && !category)) {
     return <CategorySkeleton />;
   }
   
-  if (categoryError || productsError || !category) {
+  if (productsError || !category) {
     return (
       <div className="container-custom py-16 text-center">
         <h2 className="text-2xl font-medium mb-4">Catégorie Introuvable</h2>
@@ -116,11 +104,11 @@ const CategoryPage = () => {
         {/* Sorting and product count */}
         <div className="flex justify-between items-center mb-8">
           <p className="text-muted-foreground">
-            {products.length} {products.length === 1 ? 'product' : 'products'}
+            {products.length} {products.length === 1 ? 'produit' : 'produits'}
           </p>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Sort by:</span>
+            <span className="text-sm text-muted-foreground">Trier par:</span>
             <Select value={sort} onValueChange={setSort}>
               <SelectTrigger className="w-40">
                 <SelectValue />
