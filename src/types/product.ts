@@ -5,8 +5,10 @@ export interface Product {
   price: number;
   images: string[];
   category: string;
-  material?: string;
-  dimensions?: string;
+  material: string;
+  dimensions: string;
+  designer?: string;
+  year?: string;
   inStock: boolean;
   stock?: number;
   featured?: boolean;

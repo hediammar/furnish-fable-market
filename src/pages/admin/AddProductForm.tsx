@@ -659,7 +659,7 @@ const AddProductForm = () => {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel>Featured Product</FormLabel>
+                    <FormLabel>Trending Product</FormLabel>
                   </FormItem>
                 )}
               />

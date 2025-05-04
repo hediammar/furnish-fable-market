@@ -147,7 +147,7 @@ export const fetchFeaturedProducts = async (): Promise<Product[]> => {
     
     return products;
   } catch (error) {
-    console.error('Error fetching featured products:', error);
+    console.error('Error fetching Trending products:', error);
     return [];
   }
 };

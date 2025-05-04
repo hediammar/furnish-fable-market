@@ -389,7 +389,7 @@ const EditProductForm: React.FC = () => {
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormLabel>Featured Product</FormLabel>
+                          <FormLabel>Trending Product</FormLabel>
                           <FormMessage />
                         </FormItem>
                       )}

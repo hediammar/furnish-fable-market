@@ -170,19 +170,19 @@ const Checkout: React.FC = () => {
             {/* Steps */}
             <div className="hidden md:flex items-center justify-between mb-8">
               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-furniture-taupe text-white flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-[#22c55e] text-white flex items-center justify-center">
                   <ShoppingBag size={18} />
                 </div>
                 <span className="text-sm mt-2">{language === 'fr' ? 'Panier' : 'Cart'}</span>
               </div>
-              <div className="h-0.5 bg-furniture-taupe flex-1 mx-4"></div>
+              <div className="h-0.5 bg-[#22c55e] flex-1 mx-4"></div>
               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-furniture-taupe text-white flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-white text-gray-500 flex items-center justify-center">
                   <Truck size={18} />
                 </div>
                 <span className="text-sm mt-2 font-medium">{language === 'fr' ? 'Informations' : 'Information'}</span>
               </div>
-              <div className="h-0.5 bg-gray-300 flex-1 mx-4"></div>
+              <div className="h-0.5 bg-gray-500 flex-1 mx-4"></div>
               <div className="flex flex-col items-center">
                 <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center">
                   <CheckCircle size={18} />
@@ -293,7 +293,7 @@ const Checkout: React.FC = () => {
                       <Button 
                         type="submit" 
                         disabled={isProcessing} 
-                        className="w-full py-6 bg-furniture-taupe hover:bg-furniture-brown text-white font-semibold rounded-md transition-colors"
+                        className="w-full py-6 bg-[#d2ac35] hover:bg-black text-white font-semibold rounded-md transition-colors"
                       >
                         {isProcessing ? (
                           <>

@@ -372,7 +372,7 @@ const AppointmentsManagement: React.FC = () => {
       
       // Compare dates and times
       const isSameDate = appointmentDateStr === currentDateStr;
-      const isSameTime = appointment.appointment_time === time;
+      const isSameTime = appointment.appointment_time === time || appointment.appointment_time === `${time}:00`;
       const isNotCancelled = appointment.status !== 'cancelled';
       
       return isSameDate && isSameTime && isNotCancelled;
@@ -610,7 +610,7 @@ const AppointmentsManagement: React.FC = () => {
 
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-medium text-gray-900">Active Bookings</h1>
+          <h1 className="text-2xl font-medium text-gray-900">Appoinements Calendar</h1>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" className="bg-blue-50 text-blue-700">Week</Button>
             <Button variant="ghost" size="sm" className="text-gray-600">Month</Button>
@@ -650,7 +650,7 @@ const AppointmentsManagement: React.FC = () => {
             </select>
           </div>
           <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreateAppointment(true)}>
-            <Plus className="w-4 h-4 mr-2" /> New booking
+            <Plus className="w-4 h-4 mr-2" /> New Appointment
           </Button>
         </div>
       </div>
@@ -727,10 +727,10 @@ const AppointmentsManagement: React.FC = () => {
       {renderCreateAppointmentDialog()}
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-3xl bg-[#2C2C2E] text-white">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Appointment Details</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription>
               Review the appointment details.
             </DialogDescription>
           </DialogHeader>
@@ -740,34 +740,34 @@ const AppointmentsManagement: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Appointment ID</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Appointment ID</h3>
                     <p className="font-mono">#{viewingAppointment.id}</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Status</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
                     <div>{getStatusBadge(viewingAppointment.status)}</div>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Created</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Created</h3>
                     <p>{formatDate(viewingAppointment.created_at)}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Customer Name</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Customer Name</h3>
                     <p>{viewingAppointment.user_name}</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Customer Email</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Customer Email</h3>
                     <p>{viewingAppointment.user_email}</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-1">Appointment Date & Time</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Appointment Date & Time</h3>
                     <p>
                       {new Date(viewingAppointment.appointment_date).toLocaleDateString()} at {viewingAppointment.appointment_time}
                     </p>
@@ -775,7 +775,7 @@ const AppointmentsManagement: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex justify-between pt-4 border-t border-gray-600">
+              <div className="flex justify-between pt-4 border-t">
                 <div className="space-x-2">
                   {viewingAppointment.status === 'pending' && (
                     <>

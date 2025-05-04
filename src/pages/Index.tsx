@@ -143,7 +143,7 @@ const Index: React.FC = () => {
           className="relative z-20"
         >
           <FeaturedProducts 
-            title={language === 'fr' ? "Collection en Vedette" : "Featured Collection"} 
+            title={language === 'fr' ? "Collection en Tendance" : "Trending Collection"} 
             subtitle={language === 'fr' 
               ? "Découvrez nos pièces les plus populaires, soigneusement sélectionnées pour votre maison" 
               : "Discover our most popular pieces, carefully selected for your home"
@@ -199,15 +199,7 @@ const Index: React.FC = () => {
           <NewsletterSection />
         </motion.div>
 
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "0px" }}
-          variants={sectionVariants}
-          className="relative z-20"
-        >
-          <GoogleReviews />
-        </motion.div>
+        
       </div>
     </AnimatePresence>
   );

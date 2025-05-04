@@ -58,7 +58,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           )}
           {product.featured && (
             <span className="bg-[#000000] text-[#d2ac35] text-xs font-bold px-2 py-1 rounded">
-              {language === 'fr' ? 'EN VEDETTE' : 'FEATURED'}
+              {language === 'fr' ? 'EN TENDANCE' : 'IN TREND'}
             </span>
           )}
         </div>
