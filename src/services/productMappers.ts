@@ -4,7 +4,8 @@ import { formatPrice } from '@/utils/currencyUtils';
 // Map database product to our app's Product type
 export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
   // Calculate if product is in stock
-  const inStock = dbProduct.stock !== null && dbProduct.stock > 0;
+  const stockValue = Number(dbProduct.stock);
+  const inStock = !isNaN(stockValue) && stockValue > 0;
   
   // Calculate final price after discount
   const finalPrice = dbProduct.discount 
@@ -16,8 +17,10 @@ export const mapDatabaseProductToAppProduct = (dbProduct: any): Product => {
     name: dbProduct.name,
     description: dbProduct.description || '',
     price: dbProduct.price,
+    image_nobg: dbProduct.image_nobg || '',
     images: dbProduct.images || [dbProduct.image].filter(Boolean) || [],
     category: dbProduct.category || '',
+    subcategory: dbProduct.subcategory || '',
     material: dbProduct.material,
     dimensions: dbProduct.dimensions,
     inStock: inStock,

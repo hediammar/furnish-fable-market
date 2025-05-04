@@ -11,6 +11,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  console.log('ProductCard:', { id: product.id, new: product.new, featured: product.featured, stock: product.stock });
   const { addToCart } = useCart();
   const { language } = useLanguage();
   
@@ -75,7 +76,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
           </p>
           <div className="flex justify-between items-center">
             <span className="font-semibold">{language === 'fr' ? 'Prix sur demande' : 'Price on request'}</span>
-            {!product.inStock && (
+            {(!product.stock || product.stock <= 0) && (
               <span className="text-destructive text-sm">{language === 'fr' ? 'Rupture de stock' : 'Out of stock'}</span>
             )}
           </div>

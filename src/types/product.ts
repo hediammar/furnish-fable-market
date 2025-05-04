@@ -3,8 +3,10 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  image_nobg: string;
   images: string[];
   category: string;
+  subcategory: string;
   material: string;
   dimensions: string;
   designer?: string;

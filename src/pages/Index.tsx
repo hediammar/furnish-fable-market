@@ -9,7 +9,7 @@ import ReviewsCarousel from '@/components/home/ReviewsCarousel';
 import NewsletterSection from '@/components/home/NewsletterSection';
 import PartnersCarousel from '@/components/home/PartnersCarousel';
 import GoogleReviews from '@/components/home/GoogleReviews';
-import { fetchProducts } from '@/services/productService';
+import { fetchProducts, fetchFeaturedProducts } from '@/services/productService';
 import { fetchCategories } from '@/services/categoryService';
 import { fetchPartners } from '@/services/partnerService';
 import { useLanguage } from '@/context/LanguageContext';
@@ -20,11 +20,7 @@ const Index: React.FC = () => {
   // Fetch featured products
   const { data: products = [] } = useQuery({
     queryKey: ['featuredProducts'],
-    queryFn: async () => {
-      const allProducts = await fetchProducts();
-      // Return only the featured products
-      return allProducts.filter(product => product.featured);
-    },
+    queryFn: fetchFeaturedProducts,
   });
 
   // Fetch categories

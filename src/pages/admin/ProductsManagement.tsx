@@ -143,8 +143,8 @@ const ProductsManagement = () => {
                     <TableCell>{product.stock ?? 'N/A'}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Checkbox checked={product.inStock} disabled />
-                        <span>{product.inStock ? 'In Stock' : 'Out of Stock'}</span>
+                        <Checkbox checked={product.stock > 0} disabled />
+                        <span>{product.stock > 0 ? 'In Stock' : 'Out of Stock'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

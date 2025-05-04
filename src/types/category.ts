@@ -8,3 +8,11 @@ export interface Category {
   productCount?: number;
   slug?: string;
 }
+
+// Add this at the end of the file:
+export interface Subcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  description?: string;
+}

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, Subcategory } from '@/types/category';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -31,6 +31,7 @@ const CategoriesManagement = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -39,6 +40,10 @@ const CategoriesManagement = () => {
       description: '',
       image: undefined,
     },
+  });
+  
+  const subcategoryForm = useForm<{ category_id: string; name: string; description?: string }>({
+    defaultValues: { category_id: '', name: '', description: '' },
   });
   
   React.useEffect(() => {
@@ -342,6 +347,22 @@ const CategoriesManagement = () => {
     setImagePreview(null);
   };
   
+  const handleAddSubcategory = async (values: { category_id: string; name: string; description?: string }) => {
+    try {
+      const { error } = await supabase.from('subcategories').insert({
+        category_id: values.category_id,
+        name: values.name,
+        description: values.description || null,
+      });
+      if (error) throw error;
+      toast({ title: 'Subcategory added', description: 'Subcategory created successfully.' });
+      setShowSubcategoryModal(false);
+      subcategoryForm.reset();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <Helmet>
@@ -351,6 +372,10 @@ const CategoriesManagement = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Categories Management</h1>
       </div>
+      
+      <Button onClick={() => setShowSubcategoryModal(true)} className="mb-4" variant="outline">
+        <Plus size={16} className="mr-2" /> Add Subcategory
+      </Button>
       
       <Card>
         <CardHeader>
@@ -552,6 +577,69 @@ const CategoriesManagement = () => {
           )}
         </CardContent>
       </Card>
+      
+      {showSubcategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button className="absolute top-2 right-2" onClick={() => setShowSubcategoryModal(false)}>
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-semibold mb-4">Add Subcategory</h2>
+            <Form {...subcategoryForm}>
+              <form onSubmit={subcategoryForm.handleSubmit(handleAddSubcategory)} className="space-y-4">
+                <FormField
+                  control={subcategoryForm.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Category</FormLabel>
+                      <FormControl>
+                        <select {...field} className="w-full border rounded p-2">
+                          <option value="">Select a category</option>
+                          {categories?.map((cat: Category) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={subcategoryForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subcategory Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter subcategory name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={subcategoryForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Enter subcategory description (optional)" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowSubcategoryModal(false)}>Cancel</Button>
+                  <Button type="submit">Add</Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

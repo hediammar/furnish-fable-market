@@ -44,7 +44,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [cartItems]);
 
   const addToCart = (product: Product, quantity = 1, selectedColor?: string, selectedSize?: string) => {
-    if (!product.inStock) {
+    if (product.stock <= 0) {
       toast.error('Sorry, this product is out of stock.');
       return;
     }

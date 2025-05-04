@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
-import { fetchCategories } from '@/services/categoryService';
+import { fetchCategories, fetchSubcategories } from '@/services/categoryService';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui/form';
+import { Subcategory } from '@/types/category';
 
 // Define DB product type to handle the direct data from database
 interface DBProduct {
@@ -68,6 +69,7 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0, 'Stock must be a non-negative integer').optional(),
   inStock: z.boolean().default(true),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
   material: z.string().optional(),
   dimensions: z.string().optional(),
   featured: z.boolean().default(false),
@@ -76,6 +78,8 @@ const productSchema = z.object({
   colors: z.array(z.string()).default([]),
   sizes: z.array(z.string()).default([]),
   weight: z.string().optional(),
+  image_nobg: z.string().optional(),
+  image: z.string().optional(),
   assembly: z.string().optional(),
   warranty: z.string().optional(),
 });
@@ -94,11 +98,6 @@ const EditProductForm: React.FC = () => {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: fetchCategories,
-  });
-
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -108,6 +107,7 @@ const EditProductForm: React.FC = () => {
       stock: 0,
       inStock: true,
       category: '',
+      subcategory: '',
       material: '',
       dimensions: '',
       featured: false,
@@ -116,11 +116,25 @@ const EditProductForm: React.FC = () => {
       colors: [],
       sizes: [],
       weight: '',
+      image_nobg: '',
+      image: '',
       assembly: '',
       warranty: '',
     },
   });
-  
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+  const selectedCategory = form.watch('category');
+  const selectedCategoryId = categories.find(cat => cat.name === selectedCategory)?.id || '';
+  const { data: subcategories = [], isLoading: isSubcategoriesLoading } = useQuery({
+    queryKey: ['subcategories', selectedCategoryId],
+    queryFn: () => selectedCategoryId ? fetchSubcategories(selectedCategoryId) : Promise.resolve([]),
+    enabled: !!selectedCategoryId,
+  });
+
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
@@ -155,9 +169,11 @@ const EditProductForm: React.FC = () => {
             stock: appProduct.stock || 0,
             inStock: Boolean(appProduct.inStock),
             category: appProduct.category || undefined,
+            subcategory: appProduct.subcategory || undefined,
             material: appProduct.material || '',
             dimensions: appProduct.dimensions || '',
             featured: Boolean(appProduct.featured),
+            image_nobg: appProduct.image_nobg || '',
             new: Boolean(appProduct.new),
             colors: appProduct.colors || [],
             sizes: appProduct.sizes || [],
@@ -195,11 +211,13 @@ const EditProductForm: React.FC = () => {
           price: values.price,
           stock: values.stock,
           category: values.category,
+          subcategory: values.subcategory,
           material: values.material,
           dimensions: values.dimensions,
           is_featured: values.featured,
           is_new: values.new,
           images: images,
+          image_nobg: values.image_nobg,
           colors: values.colors,
           sizes: values.sizes,
           weight: values.weight,
@@ -447,7 +465,34 @@ const EditProductForm: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+                  <FormField
+                    control={form.control}
+                    name="subcategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subcategory</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={String(field.value ?? '')}
+                            disabled={!selectedCategory || isSubcategoriesLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a subcategory" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {subcategories.map((subcategory: Subcategory) => (
+                                <SelectItem key={subcategory.id} value={subcategory.id}>
+                                  {subcategory.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="material"

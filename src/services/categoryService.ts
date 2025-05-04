@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, Subcategory } from '@/types/category';
 
 export const fetchCategories = async (): Promise<Category[]> => {
   const { data, error } = await supabase
@@ -70,4 +70,28 @@ export const fetchCategoryById = async (id: string): Promise<Category | null> =>
     console.error('Error fetching category:', error);
     return null;
   }
+};
+
+export const fetchSubcategories = async (categoryId: string): Promise<Subcategory[]> => {
+  const { data, error } = await supabase
+    .from('subcategories')
+    .select('*')
+    .eq('category_id', categoryId)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching subcategories:', error);
+    throw error;
+  }
+  return data as Subcategory[];
+};
+
+export const fetchAllSubcategories = async (): Promise<Subcategory[]> => {
+  const { data, error } = await supabase
+    .from('subcategories')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return data as Subcategory[];
 };

@@ -5,8 +5,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Product } from '@/types/product';
 import { ProductFilterOptions, fetchProducts } from '@/services/productService';
-import { fetchCategories } from '@/services/categoryService';
-import { Category } from '@/types/category';
+import { fetchCategories, fetchSubcategories, fetchAllSubcategories } from '@/services/categoryService';
+import { Category, Subcategory } from '@/types/category';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -39,12 +39,15 @@ const Products: React.FC = () => {
   const [priceRange, setPriceRange] = useState<number[]>([0, 1000]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
   const [availableMaterials, setAvailableMaterials] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [allSubcategories, setAllSubcategories] = useState<Subcategory[]>([]);
 
   useEffect(() => {
     const initialSearchQuery = searchParams.get('q') || '';
@@ -55,7 +58,7 @@ const Products: React.FC = () => {
 
   useEffect(() => {
     fetchFilteredProducts();
-  }, [searchQuery, sortOption, priceRange, selectedMaterials, selectedCategories]);
+  }, [searchQuery, sortOption, priceRange, selectedMaterials, selectedCategories, selectedSubcategory]);
 
   useEffect(() => {
     const fetchMaterials = async () => {
@@ -80,6 +83,43 @@ const Products: React.FC = () => {
     fetchMaterials();
   }, [language]);
 
+  useEffect(() => {
+    const loadSubcategories = async () => {
+      if (selectedCategories.length === 1) {
+        try {
+          const category = categories.find(cat => cat.name === selectedCategories[0]);
+          if (category) {
+            const subcategoriesData = await fetchSubcategories(category.id);
+            setSubcategories(subcategoriesData);
+          }
+        } catch (error) {
+          console.error('Error loading subcategories:', error);
+        }
+      } else {
+        setSubcategories([]);
+        setSelectedSubcategory('all');
+      }
+    };
+
+    loadSubcategories();
+  }, [selectedCategories, categories]);
+
+  useEffect(() => {
+    const loadAllSubcategories = async () => {
+      if (selectedCategories.length === 0) {
+        try {
+          const allSubs = await fetchAllSubcategories();
+          setAllSubcategories(allSubs);
+        } catch (error) {
+          console.error('Error loading all subcategories:', error);
+        }
+      } else {
+        setAllSubcategories([]);
+      }
+    };
+    loadAllSubcategories();
+  }, [selectedCategories]);
+
   const loadCategories = async () => {
     try {
       const categoriesData = await fetchCategories();
@@ -99,6 +139,7 @@ const Products: React.FC = () => {
         sort: sortOption,
         materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
         categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        subcategory: selectedSubcategory !== 'all' ? selectedSubcategory : undefined,
         minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
         maxPrice: priceRange[1] < 1000 ? priceRange[1] : undefined,
       };
@@ -136,8 +177,12 @@ const Products: React.FC = () => {
     setSelectedCategories(prev => 
       prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
+        : [categoryId] // Only allow one category to be selected at a time
     );
+  };
+
+  const handleSubcategoryChange = (value: string) => {
+    setSelectedSubcategory(value);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,11 +212,43 @@ const Products: React.FC = () => {
     setPriceRange([0, 1000]);
     setSelectedMaterials([]);
     setSelectedCategories([]);
+    setSelectedSubcategory('all');
     setSortOption('newest');
   };
 
+  // Group products by subcategory
+  const groupedProducts = products.reduce((acc, product) => {
+    const subcategory = product.subcategory || 'Uncategorized';
+    if (!acc[subcategory]) {
+      acc[subcategory] = [];
+    }
+    acc[subcategory].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  // Create a mapping from subcategory ID to subcategory name
+  let subcategoryIdToName: Record<string, string> = {};
+  if (selectedCategories.length === 1 && subcategories.length > 0) {
+    subcategoryIdToName = subcategories.reduce((acc, subcat) => {
+      acc[subcat.id] = subcat.name;
+      return acc;
+    }, {} as Record<string, string>);
+  } else if (selectedCategories.length === 0 && allSubcategories.length > 0) {
+    subcategoryIdToName = allSubcategories.reduce((acc, subcat) => {
+      acc[subcat.id] = subcat.name;
+      return acc;
+    }, {} as Record<string, string>);
+  } else {
+    subcategoryIdToName = products.reduce((acc, product) => {
+      if (product.subcategory && product.subcategory !== 'Uncategorized') {
+        acc[product.subcategory] = product.subcategory;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white" >
       <Helmet>
         <title>
           {language === 'fr' ? 'Produits | Meubles Karim' : 'Products | Meubles Karim'}
@@ -213,204 +290,160 @@ const Products: React.FC = () => {
         </div>
       </section>
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Search and Filter Controls */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="w-full md:w-auto flex-1 max-w-md">
-            <Input
-              type="text"
-              placeholder={language === 'fr' ? 'Rechercher des produits...' : 'Search products...'}
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full"
-            />
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select value={sortOption} onValueChange={handleSortChange}>
+      {/* Dynamic Category Text Block */}
+      <div className="text-center mt-10">
+        <h2 className="text-4xl font-serif font-semibold">
+          {selectedCategories.length === 1
+            ? selectedCategories[0]
+            : selectedCategories.length > 1
+              ? selectedCategories.join(', ')
+              : language === 'fr' ? 'Voir tout' : 'View All'}
+        </h2>
+      </div>
+
+      {/* Filters and Search Row */}
+      <div className="flex flex-col items-center gap-4 mt-8">
+        <div className="flex flex-row gap-4 w-full max-w-4xl justify-center">
+          {/* Categories Dropdown */}
+          <Select value={selectedCategories[0] || "all"} onValueChange={value => setSelectedCategories(value === "all" ? [] : [value])}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={language === 'fr' ? 'Catégories' : 'Categories'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{language === 'fr' ? 'Voir tout' : 'View All'}</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Subcategories Dropdown */}
+          {selectedCategories.length === 1 && subcategories.length > 0 && (
+            <Select value={selectedSubcategory} onValueChange={handleSubcategoryChange}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={language === 'fr' ? 'Trier par' : 'Sort by'} />
+                <SelectValue placeholder={language === 'fr' ? 'Sous-catégories' : 'Subcategories'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">
-                  {language === 'fr' ? 'Plus récent' : 'Newest'}
-                </SelectItem>
-                <SelectItem value="price_low">
-                  {language === 'fr' ? 'Prix: croissant' : 'Price: Low to High'}
-                </SelectItem>
-                <SelectItem value="price_high">
-                  {language === 'fr' ? 'Prix: décroissant' : 'Price: High to Low'}
-                </SelectItem>
-                <SelectItem value="name_asc">
-                  {language === 'fr' ? 'Nom: A-Z' : 'Name: A-Z'}
-                </SelectItem>
-                <SelectItem value="name_desc">
-                  {language === 'fr' ? 'Nom: Z-A' : 'Name: Z-A'}
-                </SelectItem>
+                <SelectItem value="all">{language === 'fr' ? 'Toutes les sous-catégories' : 'All Subcategories'}</SelectItem>
+                {subcategories.map(subcategory => (
+                  <SelectItem key={subcategory.id} value={subcategory.id}>{subcategory.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            
-            <Button
-              variant="outline"
-              className={cn(
-                "md:hidden",
-                (selectedMaterials.length > 0 || selectedCategories.length > 0) && "border-primary text-primary"
-              )}
-              onClick={() => setShowFilters(!showFilters)}
+          )}
+
+          {/* Materials Dropdown */}
+          <Select value={selectedMaterials[0] || "all"} onValueChange={value => setSelectedMaterials(value === "all" ? [] : [value])}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={language === 'fr' ? 'Matériaux' : 'Materials'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{language === 'fr' ? 'Voir tout' : 'View All'}</SelectItem>
+              {availableMaterials.map(material => (
+                <SelectItem key={material} value={material}>{material}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Search Bar */}
+          <Input
+            type="text"
+            placeholder={language === 'fr' ? 'Rechercher...' : 'Search by product name'}
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-[250px]"
+          />
+        </div>
+      </div>
+      
+      {/* Product Grid */}
+      <div className="container mx-auto px-4 pb-16">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 animate-pulse">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="bg-muted rounded-lg h-[350px]"></div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive">{error}</p>
+            <Button 
+              variant="outline" 
+              onClick={fetchFilteredProducts}
+              className="mt-4"
             >
-              <Filter size={16} className="mr-2" />
-              {language === 'fr' ? 'Filtres' : 'Filters'}
-              {(selectedMaterials.length > 0 || selectedCategories.length > 0) && 
-                <span className="ml-1 text-xs bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center">
-                  {selectedMaterials.length + selectedCategories.length}
-                </span>
-              }
+              {language === 'fr' ? 'Réessayer' : 'Try Again'}
             </Button>
           </div>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <aside className={cn(
-            "w-full md:w-64 shrink-0 transition-all",
-            showFilters ? "block" : "hidden md:block"
-          )}>
-            <div className="bg-card rounded-lg border p-4 sticky top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-lg">
-                  {language === 'fr' ? 'Filtres' : 'Filters'}
-                </h3>
-                
-                {(selectedMaterials.length > 0 || selectedCategories.length > 0) && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2">
-                    <X size={14} className="mr-1" />
-                    {language === 'fr' ? 'Effacer' : 'Clear'}
-                  </Button>
-                )}
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setShowFilters(false)}
-                >
-                  <X size={18} />
-                </Button>
-              </div>
-              
-              <Accordion type="multiple" defaultValue={["categories", "materials"]}>
-                {/* Categories Filter */}
-                <AccordionItem value="categories">
-                  <AccordionTrigger className="text-sm font-medium py-2">
-                    {language === 'fr' ? 'Catégories' : 'Categories'}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ScrollArea className="h-[200px] pr-3">
-                      <div className="space-y-2">
-                        {categories.map((category) => (
-                          <div key={category.id} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`category-${category.name}`} 
-                              checked={selectedCategories.includes(category.name)}
-                              onCheckedChange={() => handleCategoryToggle(category.name)}
-                            />
-                            <label 
-                              htmlFor={`category-${category.id}`}
-                              className="text-sm cursor-pointer"
-                            >
-                              {category.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                
-                
-                {/* Materials Filter */}
-                <AccordionItem value="materials">
-                  <AccordionTrigger className="text-sm font-medium py-2">
-                    {language === 'fr' ? 'Matériaux' : 'Materials'}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ScrollArea className="h-[200px] pr-3">
-                      <div className="space-y-2">
-                        {availableMaterials.map((material) => (
-                          <div key={material} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`material-${material}`} 
-                              checked={selectedMaterials.includes(material)}
-                              onCheckedChange={() => handleMaterialToggle(material)}
-                            />
-                            <label 
-                              htmlFor={`material-${material}`}
-                              className="text-sm cursor-pointer"
-                            >
-                              {material}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </aside>
-          
-          {/* Products Grid */}
-          <div className="flex-1">
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-                {[...Array(6)].map((_, index) => (
-                  <div key={index} className="bg-muted rounded-lg h-[350px]"></div>
-                ))}
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-destructive">{error}</p>
-                <Button 
-                  variant="outline" 
-                  onClick={fetchFilteredProducts}
-                  className="mt-4"
-                >
-                  {language === 'fr' ? 'Réessayer' : 'Try Again'}
-                </Button>
-              </div>
-            ) : products.length === 0 ? (
-              <div className="text-center py-12">
-                <h3 className="text-xl font-medium mb-2">
-                  {language === 'fr' ? 'Aucun produit trouvé' : 'No products found'}
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {language === 'fr' 
-                    ? 'Essayez d\'ajuster vos filtres ou votre recherche.' 
-                    : 'Try adjusting your filters or search term.'}
-                </p>
-                {(searchQuery || selectedMaterials.length > 0 || selectedCategories.length > 0) && (
-                  <Button 
-                    variant="outline" 
-                    onClick={clearFilters}
-                  >
-                    {language === 'fr' ? 'Effacer les filtres' : 'Clear Filters'}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  />
-                ))}
-              </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-medium mb-2">
+              {language === 'fr' ? 'Aucun produit trouvé' : 'No products found'}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {language === 'fr' 
+                ? 'Essayez d\'ajuster vos filtres ou votre recherche.' 
+                : 'Try adjusting your filters or search term.'}
+            </p>
+            {(searchQuery || selectedMaterials.length > 0 || selectedCategories.length > 0) && (
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+              >
+                {language === 'fr' ? 'Effacer les filtres' : 'Clear Filters'}
+              </Button>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-12">
+            
+            {Object.entries(groupedProducts).map(([subcategoryId, products]) => {
+              let headerLabel = subcategoryIdToName[subcategoryId];
+              if (!headerLabel) {
+                if (!subcategoryId || subcategoryId === 'Uncategorized') {
+                  headerLabel = language === 'fr' ? 'Sans sous-catégorie' : 'Uncategorized';
+                } else {
+                  headerLabel = subcategoryId;
+                }
+              }
+              return (
+                <div key={subcategoryId} className="space-y-6">
+                  <Separator className="my-10" />
+                  <h2
+                    className="text-2xl font-medium text-center"
+                    style={{ fontFamily: 'Didot, Bodoni Moda, Playfair Display, serif' }}
+                  >
+                    {headerLabel}
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+                    {products.map((product) => (
+                      <div
+                        key={product.id}
+                        className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
+                        onClick={() => navigate(`/product/${product.id}`)}
+                      >
+                        <div className="relative w-full flex justify-center">
+                          <img
+                            src={product.image_nobg}
+                            alt={product.name}
+                            className="h-64 object-contain rounded-lg shadow-md"
+                          />
+                          {product.new && (
+                            <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">New</span>
+                          )}
+                          {product.featured && (
+                            <span className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">In Trend</span>
+                          )}
+                        </div>
+                        <div className="mt-4 text-center font-medium text-lg" style={{ fontFamily: 'Didot, Bodoni Moda, Playfair Display, serif' }}>{product.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { mapDatabaseProductToAppProduct } from '@/services/productMappers';
 export interface ProductFilterOptions {
   category?: string;
   categories?: string[];
+  subcategory?: string;
   search?: string;
   featured?: boolean;
   limit?: number;
@@ -15,89 +16,99 @@ export interface ProductFilterOptions {
   maxPrice?: number;
   materials?: string[];
   colors?: string[];
+  stock?: boolean;
+  new?: boolean;
 }
 
 export const fetchProducts = async (options: ProductFilterOptions = {}): Promise<Product[]> => {
   try {
-    let query = supabase.from('products').select('*');
-    
-    // Apply filters
+    let query = supabase
+      .from('products')
+      .select('*');
+
+    // Apply category filter
     if (options.category) {
       query = query.eq('category', options.category);
     }
-    
-    // Filter by multiple categories if provided
+
+    // Apply categories filter (multiple categories)
     if (options.categories && options.categories.length > 0) {
       query = query.in('category', options.categories);
     }
-    
-    if (options.search) {
-      query = query.or(`name.ilike.%${options.search}%,description.ilike.%${options.search}%`);
+
+    // Apply subcategory filter
+    if (options.subcategory) {
+      query = query.eq('subcategory', options.subcategory);
     }
-    
+
+    // Apply search filter
+    if (options.search) {
+      query = query.ilike('name', `%${options.search}%`);
+    }
+
+    // Apply featured filter
     if (options.featured !== undefined) {
       query = query.eq('is_featured', options.featured);
     }
-    
+
+    // Apply price range filter
     if (options.minPrice !== undefined) {
       query = query.gte('price', options.minPrice);
     }
-    
     if (options.maxPrice !== undefined) {
       query = query.lte('price', options.maxPrice);
     }
-    
+
+    // Apply materials filter
     if (options.materials && options.materials.length > 0) {
       query = query.in('material', options.materials);
     }
-    
+
+    // Apply colors filter
     if (options.colors && options.colors.length > 0) {
       query = query.contains('colors', options.colors);
     }
-    
+
     // Apply sorting
     if (options.sort) {
       switch (options.sort) {
+        case 'price-asc':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price-desc':
+          query = query.order('price', { ascending: false });
+          break;
         case 'newest':
           query = query.order('created_at', { ascending: false });
           break;
-        case 'price_low':
-          query = query.order('price', { ascending: true });
-          break;
-        case 'price_high':
-          query = query.order('price', { ascending: false });
-          break;
-        case 'name_asc':
-          query = query.order('name', { ascending: true });
-          break;
-        case 'name_desc':
-          query = query.order('name', { ascending: false });
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
           break;
         default:
           query = query.order('created_at', { ascending: false });
       }
-    } else {
-      // Default sorting by newest
-      query = query.order('created_at', { ascending: false });
     }
-    
+
     // Apply limit if specified
     if (options.limit) {
       query = query.limit(options.limit);
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
       console.error('Error fetching products:', error);
       throw error;
     }
-    
-    // Map database products to app products
-    return (data || []).map(dbProduct => mapDatabaseProductToAppProduct(dbProduct));
+
+    if (!data) {
+      return [];
+    }
+
+    return data.map(mapDatabaseProductToAppProduct);
   } catch (error) {
     console.error('Error in fetchProducts:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -205,9 +216,11 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
         description: product.description,
         price: product.price,
         category: product.category,
+        subcategory: product.subcategory,
         material: product.material,
         dimensions: product.dimensions,
         images: product.images,
+        image_nobg: product.image_nobg,
         stock: product.stock || 0,
         is_featured: product.featured || false,
         is_new: product.new || false,

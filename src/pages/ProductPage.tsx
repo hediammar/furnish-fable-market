@@ -68,24 +68,7 @@ const ProductPage: React.FC = () => {
   return (
     <main>
       {/* Breadcrumb */}
-      <div className="bg-muted py-3">
-        <div className="container-custom">
-          <div className="flex items-center text-sm">
-            {categories.map((category, index) => (
-              <React.Fragment key={index}>
-                {index > 0 && <span className="mx-2 text-muted-foreground">/</span>}
-                {index === categories.length - 1 ? (
-                  <span className="text-muted-foreground">{category.name}</span>
-                ) : (
-                  <Link to={category.path} className="hover:text-furniture-brown text-muted-foreground">
-                    {category.name}
-                  </Link>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
+      
       
       {/* Product Detail */}
       <ProductDetail product={product} />

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct } from '@/services/productService';
-import { fetchCategories } from '@/services/categoryService';
+import { fetchCategories, fetchSubcategories } from '@/services/categoryService';
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle, ArrowLeft, Loader2, Save, Upload, X, Plus } from 'lucide-react';
@@ -26,6 +26,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
+import { Subcategory } from '@/types/category';
 
 const AVAILABLE_MATERIALS = [
   'Wood',
@@ -46,9 +47,11 @@ const productSchema = z.object({
   price: z.coerce.number().positive({ message: 'Price must be a positive number' }),
   discount: z.coerce.number().min(0).max(100).optional(),
   category: z.string().min(1, { message: 'Please select a category' }),
+  subcategory: z.string().min(1, { message: 'Please select a subcategory' }),
   stock: z.coerce.number().int().nonnegative({ message: 'Stock must be a non-negative integer' }),
   material: z.string().optional(),
   dimensions: z.string().optional(),
+  image_nobg: z.string().optional(),
   images: z.array(z.string()).default([]),
   inStock: z.boolean().default(true),
   featured: z.boolean().default(false),
@@ -68,11 +71,8 @@ const AddProductForm = () => {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
-  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => fetchCategories(),
-  });
+  const [isUploadingNoBg, setIsUploadingNoBg] = useState(false);
+  const [uploadProgressNoBg, setUploadProgressNoBg] = useState(0);
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -82,9 +82,11 @@ const AddProductForm = () => {
       price: 0,
       discount: 0,
       category: '',
+      subcategory: '',
       stock: 0,
       material: '',
       dimensions: '',
+      image_nobg: '',
       images: [],
       inStock: true,
       featured: false,
@@ -97,6 +99,19 @@ const AddProductForm = () => {
     },
   });
   
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => fetchCategories(),
+  });
+  
+  const selectedCategory = form.watch('category');
+  const selectedCategoryId = categories.find(cat => cat.name === selectedCategory)?.id || '';
+  const { data: subcategories = [], isLoading: isSubcategoriesLoading } = useQuery({
+    queryKey: ['subcategories', selectedCategoryId],
+    queryFn: () => selectedCategoryId ? fetchSubcategories(selectedCategoryId) : Promise.resolve([]),
+    enabled: !!selectedCategoryId,
+  });
+  
   const productMutation = useMutation({
     mutationFn: (data: ProductFormValues) => {
       const productData: Omit<Product, 'id'> = {
@@ -105,6 +120,8 @@ const AddProductForm = () => {
         price: data.price,
         discount: data.discount,
         category: data.category,
+        subcategory: data.subcategory,
+        image_nobg: data.image_nobg,
         images: data.images || [],
         inStock: data.inStock ?? true,
         stock: data.stock,
@@ -206,6 +223,53 @@ const AddProductForm = () => {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+  
+  const handleNoBgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploadingNoBg(true);
+    setUploadProgressNoBg(0);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `nobg-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('products')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) {
+        console.error('Error uploading file:', error);
+        throw new Error(`Error uploading file: ${error.message}`);
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+      
+      if (urlData) {
+        form.setValue('image_nobg', urlData.publicUrl);
+        toast({
+          title: 'Image uploaded',
+          description: 'Successfully uploaded the no background image.',
+        });
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload error',
+        description: error.message || 'Failed to upload image',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingNoBg(false);
     }
   };
   
@@ -325,6 +389,35 @@ const AddProductForm = () => {
                             {categories.map((category) => (
                               <SelectItem key={category.id} value={category.name}>
                                 {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="subcategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subcategory*</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedCategory || isSubcategoriesLoading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a subcategory" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subcategories.map((subcategory: Subcategory) => (
+                              <SelectItem key={subcategory.id} value={subcategory.id}>
+                                {subcategory.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -557,6 +650,85 @@ const AddProductForm = () => {
                 />
               </div>
               
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="image_nobg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image (No Background)</FormLabel>
+                      <FormControl>
+                        <div className="border border-input rounded-md p-4 space-y-4">
+                          <div>
+                            <label 
+                              htmlFor="nobg-file-upload" 
+                              className="flex items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/25 rounded-md cursor-pointer hover:bg-muted/50"
+                            >
+                              <div className="flex flex-col items-center space-y-2">
+                                <Upload size={24} className="text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  Drag & drop or click to upload
+                                </span>
+                              </div>
+                              <input
+                                id="nobg-file-upload"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleNoBgFileUpload}
+                                disabled={isUploadingNoBg}
+                              />
+                            </label>
+                            
+                            {isUploadingNoBg && (
+                              <div className="mt-2">
+                                <div className="w-full bg-muted h-2 rounded-full mt-1 overflow-hidden">
+                                  <div 
+                                    className="bg-furniture-teal h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadProgressNoBg}%` }}
+                                  />
+                                </div>
+                                <p className="text-xs text-center text-muted-foreground mt-1">
+                                  Uploading... {uploadProgressNoBg}%
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {field.value && (
+                            <div className="relative group">
+                              <img 
+                                src={field.value} 
+                                alt="No background preview" 
+                                className="h-20 w-20 object-cover rounded-md"
+                                onError={(e) => {
+                                  console.log('Image failed to load:', field.value);
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => {
+                                  form.setValue('image_nobg', '');
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
                   <FormLabel>Product Images</FormLabel>
