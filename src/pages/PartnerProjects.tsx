@@ -4,10 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchPartnerById } from '@/services/partnerService';
+import { fetchProducts } from '@/services/productService';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Partner, Project } from '@/types/partner';
+import { Product } from '@/types/product';
 
 const PartnerProjects: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +27,19 @@ const PartnerProjects: React.FC = () => {
     queryKey: ['partner', id],
     queryFn: () => fetchPartnerById(id!),
     enabled: !!id,
+  });
+
+  // Fetch products used in the project
+  const { data: projectProducts = [] } = useQuery<Product[]>({
+    queryKey: ['projectProducts', partner?.projects?.[0]?.products],
+    queryFn: async () => {
+      if (!partner?.projects?.[0]?.products?.length) return [];
+      const allProducts = await fetchProducts({});
+      return allProducts.filter(product => 
+        partner.projects[0].products.includes(product.name)
+      );
+    },
+    enabled: !!partner?.projects?.[0]?.products?.length,
   });
 
   if (isLoading) {
@@ -238,6 +253,51 @@ const PartnerProjects: React.FC = () => {
             )}
           </motion.div>
         </div>
+
+        {/* Products Used in Project - Full Width Section */}
+        {projectProducts.length > 0 && (
+          <motion.div
+            className="mt-20"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h3 className="text-3xl font-serif font-medium mb-8 text-center">
+              {language === 'fr' ? 'Produits utilisés' : 'Products Used'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+              {projectProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <div className="relative w-full flex justify-center">
+                    <img
+                      src={product.image_nobg}
+                      alt={product.name}
+                      className="h-64 object-contain rounded-lg shadow-md"
+                    />
+                    {product.new && (
+                      <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                        {language === 'fr' ? 'Nouveau' : 'New'}
+                      </span>
+                    )}
+                    {product.featured && (
+                      <span className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+                        {language === 'fr' ? 'Tendance' : 'In Trend'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 text-center font-medium text-lg" style={{ fontFamily: 'Didot, Bodoni Moda, Playfair Display, serif' }}>
+                    {product.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Fullscreen Image Modal */}

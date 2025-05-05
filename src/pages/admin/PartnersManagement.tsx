@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { fetchPartners, createPartner, updatePartner, deletePartner } from '@/services/partnerService';
+import { fetchProducts } from '@/services/productService';
 import { Partner, Project } from '@/types/partner';
+import { Product } from '@/types/product';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +35,13 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { useTranslation } from 'react-i18next';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const PartnersManagement: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -49,12 +58,14 @@ const PartnersManagement: React.FC = () => {
     title: '',
     description: '',
     images: [],
+    products: [],
   });
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [projectImages, setProjectImages] = useState<File[]>([]);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -65,6 +76,15 @@ const PartnersManagement: React.FC = () => {
   const { data: partners = [], isLoading } = useQuery({
     queryKey: ['partners'],
     queryFn: fetchPartners,
+  });
+
+  // Fetch products
+  const { data: allProducts = [] } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const products = await fetchProducts({});
+      return products;
+    },
   });
 
   // Upload logo to Supabase Storage
@@ -251,6 +271,7 @@ const PartnersManagement: React.FC = () => {
           title: projectData.title,
           description: projectData.description,
           images: projectData.images,
+          products: projectData.products,
         }])
         .select()
         .single();
@@ -297,6 +318,81 @@ const PartnersManagement: React.FC = () => {
     }
   });
 
+  // Update project mutation
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ projectId, project }: { projectId: string; project: Partial<Project> }) => {
+      let projectData = { ...project };
+      
+      if (projectImages.length > 0) {
+        try {
+          const imageUrls = await uploadProjectImages(projectImages);
+          projectData.images = [...(projectData.images || []), ...imageUrls];
+        } catch (error) {
+          toast({ 
+            title: 'Error', 
+            description: 'Failed to upload project images', 
+            variant: 'destructive' 
+          });
+          throw error;
+        }
+      }
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .update(projectData)
+        .eq('id', projectId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners'] });
+      toast({ title: 'Success', description: 'Project has been updated successfully' });
+      setIsProjectDialogOpen(false);
+      resetProjectForm();
+      setSelectedProject(null);
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to update project', 
+        variant: 'destructive' 
+      });
+      console.error('Update project error:', error);
+    }
+  });
+
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) {
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners'] });
+      toast({ title: 'Success', description: 'Project has been deleted successfully' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to delete project', 
+        variant: 'destructive' 
+      });
+      console.error('Delete project error:', error);
+    }
+  });
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -315,6 +411,7 @@ const PartnersManagement: React.FC = () => {
       title: '',
       description: '',
       images: [],
+      products: [],
     });
     setProjectImages([]);
     setSelectedPartnerId(null);
@@ -374,6 +471,7 @@ const PartnersManagement: React.FC = () => {
       title: '',
       description: '',
       images: [],
+      products: [],
     });
     setProjectImages([]);
     setIsProjectDialogOpen(true);
@@ -450,6 +548,45 @@ const PartnersManagement: React.FC = () => {
   const handleProjectImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setProjectImages(Array.from(e.target.files));
+    }
+  };
+
+  const handleEditProjectClick = (project: Project) => {
+    setSelectedProject(project);
+    setProjectFormData({
+      title: project.title,
+      description: project.description,
+      images: project.images,
+      products: project.products,
+    });
+    setProjectImages([]);
+    setIsProjectDialogOpen(true);
+  };
+
+  const handleUpdateProject = () => {
+    if (!selectedProject) return;
+
+    if (!projectFormData.title || !projectFormData.description) {
+      toast({
+        title: 'Error',
+        description: 'Project title and description are required',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      updateProjectMutation.mutate({
+        projectId: selectedProject.id,
+        project: projectFormData
+      });
+    } catch (error) {
+      console.error('Error in handleUpdateProject:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update project',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -546,6 +683,57 @@ const PartnersManagement: React.FC = () => {
                               <Plus size={16} />
                             </Button>
                           </div>
+                          {partner.projects && partner.projects.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {partner.projects.map((project) => (
+                                <div key={project.id} className="flex items-center justify-between p-1 bg-gray-50 rounded text-sm">
+                                  <span className="truncate">{project.title}</span>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleEditProjectClick(project);
+                                      }}
+                                      className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    >
+                                      <Edit size={14} />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Trash2 size={14} />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>{t('partners.deleteConfirm')}</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            {t('partners.deleteProjectWarning', { title: project.title })}
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>{t('partners.cancel')}</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="bg-red-500 hover:bg-red-600"
+                                            onClick={() => deleteProjectMutation.mutate(project.id)}
+                                          >
+                                            {t('partners.delete')}
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
@@ -706,6 +894,7 @@ const PartnersManagement: React.FC = () => {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedPartnerId(null);
+            setSelectedProject(null);
             resetProjectForm();
           }
           setIsProjectDialogOpen(open);
@@ -714,16 +903,22 @@ const PartnersManagement: React.FC = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {selectedPartnerId ? `Add Project for ${partners.find(p => p.id === selectedPartnerId)?.name}` : 'Add Project'}
+              {selectedProject 
+                ? `${t('partners.editProject')} - ${selectedProject.title}`
+                : `${t('partners.addProject')} - ${partners.find(p => p.id === selectedPartnerId)?.name}`
+              }
             </DialogTitle>
             <DialogDescription>
-              {t('partners.addProjectDescription')}
+              {selectedProject 
+                ? t('partners.editProjectDescription')
+                : t('partners.addProjectDescription')
+              }
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={(e) => {
             e.preventDefault();
-            handleAddProject();
+            selectedProject ? handleUpdateProject() : handleAddProject();
           }}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
@@ -757,14 +952,119 @@ const PartnersManagement: React.FC = () => {
                 <Label htmlFor="project-images" className="text-right">
                   {t('partners.projectImages')}
                 </Label>
-                <Input
-                  id="project-images"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleProjectImagesChange}
-                  className="col-span-3"
-                />
+                <div className="col-span-3 space-y-4">
+                  <Input
+                    id="project-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleProjectImagesChange}
+                    className="col-span-3"
+                  />
+                  {/* Show existing images when editing */}
+                  {selectedProject?.images && selectedProject.images.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {selectedProject.images.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={image}
+                            alt={`Project image ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProjectFormData({
+                                ...projectFormData,
+                                images: projectFormData.images.filter((_, i) => i !== index)
+                              });
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Show new images being uploaded */}
+                  {projectImages.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {projectImages.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`New image ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProjectImages(projectImages.filter((_, i) => i !== index));
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="project-products" className="text-right">
+                  {t('partners.projectProducts')}
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={projectFormData.products?.[0] || ''}
+                    onValueChange={(value: string) => {
+                      if (!projectFormData.products?.includes(value)) {
+                        setProjectFormData({
+                          ...projectFormData,
+                          products: [...(projectFormData.products || []), value]
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select products used in this project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allProducts.map((product) => (
+                        <SelectItem key={product.id} value={product.name}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {projectFormData.products && projectFormData.products.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {projectFormData.products.map((product, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-full text-sm"
+                        >
+                          {product}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProjectFormData({
+                                ...projectFormData,
+                                products: projectFormData.products.filter((_, i) => i !== index)
+                              });
+                            }}
+                            className="text-primary hover:text-primary/80"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -774,6 +1074,7 @@ const PartnersManagement: React.FC = () => {
                 variant="outline" 
                 onClick={() => {
                   resetProjectForm();
+                  setSelectedProject(null);
                   setIsProjectDialogOpen(false);
                 }}
               >

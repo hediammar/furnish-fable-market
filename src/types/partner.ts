@@ -16,6 +16,7 @@ export interface Project {
   title: string;
   description: string;
   images: string[];
+  products: string[];
 }
 
 // Define database schema types for type safety with Supabase

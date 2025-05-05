@@ -19,13 +19,17 @@
   "noDescription": "No description",
   "deleteConfirm": "Are you sure?",
   "deleteWarning": "This will permanently delete the partner \"{name}\". This action cannot be undone.",
+  "deleteProjectWarning": "This will permanently delete the project \"{title}\". This action cannot be undone.",
   "cancel": "Cancel",
   "delete": "Delete",
   "uploading": "Uploading...",
   "save": "Save",
   "addProject": "Add Project",
   "addProjectDescription": "Add a new project for this partner",
+  "editProject": "Edit Project",
+  "editProjectDescription": "Edit the project details",
   "projectTitle": "Project Title",
   "projectDescription": "Project Description",
-  "projectImages": "Project Images"
+  "projectImages": "Project Images",
+  "projectProducts": "Products Used"
 } 

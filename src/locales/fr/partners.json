@@ -19,13 +19,17 @@
   "noDescription": "Aucune description",
   "deleteConfirm": "Êtes-vous sûr ?",
   "deleteWarning": "Cela supprimera définitivement le partenaire \"{name}\". Cette action ne peut pas être annulée.",
+  "deleteProjectWarning": "Cela supprimera définitivement le projet \"{title}\". Cette action ne peut pas être annulée.",
   "cancel": "Annuler",
   "delete": "Supprimer",
   "uploading": "Téléchargement...",
   "save": "Enregistrer",
   "addProject": "Ajouter un Projet",
   "addProjectDescription": "Ajoutez un nouveau projet pour ce partenaire",
+  "editProject": "Modifier le Projet",
+  "editProjectDescription": "Modifiez les détails du projet",
   "projectTitle": "Titre du Projet",
   "projectDescription": "Description du Projet",
-  "projectImages": "Images du Projet"
+  "projectImages": "Images du Projet",
+  "projectProducts": "Produits Utilisés"
 } 
