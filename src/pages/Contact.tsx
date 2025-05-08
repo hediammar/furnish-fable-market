@@ -26,6 +26,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import RendezVousButton from '@/components/ui/RendezVousButton';
+import RendezVousModal from '@/components/ui/RendezVousModal';
 
 const contactFormSchema = z.object({
   name: z.string().min(2, { message: 'Le nom doit contenir au moins 2 caractères' }),
@@ -417,125 +419,19 @@ const Contact = () => {
           <p className="mb-6">
             Nous vous invitons à visiter notre showroom à Hammamet pour découvrir notre collection de meubles et bénéficier des conseils de nos experts.
           </p>
-          <Button 
-            variant="outline" 
-            size="lg"
-            onClick={() => setIsAppointmentModalOpen(true)}
-          >
+          <RendezVousButton onClick={() => setIsAppointmentModalOpen(true)}>
             Prendre rendez-vous
-          </Button>
+          </RendezVousButton>
         </div>
         <Separator className="my-12" />
       </div>
 
-      {/* Appointment Modal */}
-      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Prendre un rendez-vous</DialogTitle>
-            <DialogDescription>
-              {!user ? (
-                <p className="text-red-500">Veuillez vous connecter pour prendre un rendez-vous.</p>
-              ) : (
-                "Sélectionnez une date et une heure pour votre visite."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          {user ? (
-            <div className="grid gap-4 py-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Sélectionnez une date</h3>
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  disabled={(date) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return date < today || hasAppointmentInSameWeek(date);
-                  }}
-                  className="rounded-md border"
-                />
-                {selectedDate && hasAppointmentInSameWeek(selectedDate) && (
-                  <p className="text-red-500 text-sm mt-2">
-                    Vous avez déjà un rendez-vous prévu cette semaine.
-                  </p>
-                )}
-              </div>
-
-              {selectedDate && (
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Sélectionnez une heure</h3>
-                  {isLoadingAppointments ? (
-                    <div className="flex justify-center items-center h-32">
-                      <p className="text-gray-500">Chargement des créneaux disponibles...</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto">
-                      {timeSlots.map((time) => {
-                        const isAvailable = isTimeSlotAvailable(selectedDate, time);
-                        return (
-                          <Button
-                            key={time}
-                            variant={selectedTime === time ? "default" : "outline"}
-                            onClick={() => {
-                              if (isAvailable) {
-                                setSelectedTime(time);
-                              }
-                            }}
-                            disabled={!isAvailable}
-                            className={cn(
-                              "h-10 text-sm",
-                              !isAvailable && "opacity-50 cursor-not-allowed bg-gray-100"
-                            )}
-                          >
-                            {time}
-                            {!isAvailable && (
-                              <span className="ml-1 text-xs">(Occupé)</span>
-                            )}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <Button
-                variant="default"
-                onClick={() => {
-                  setIsAppointmentModalOpen(false);
-                  // You might want to redirect to login here
-                }}
-              >
-                Se connecter
-              </Button>
-            </div>
-          )}
-
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsAppointmentModalOpen(false)}
-              className="w-full sm:w-auto"
-            >
-              Annuler
-            </Button>
-            {user && (
-              <Button
-                onClick={() => setIsConfirmationOpen(true)}
-                disabled={!selectedDate || !selectedTime || !isTimeSlotAvailable(selectedDate, selectedTime) || hasAppointmentInSameWeek(selectedDate)}
-                className="w-full sm:w-auto"
-              >
-                Confirmer
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RendezVousModal
+        open={isAppointmentModalOpen}
+        onOpenChange={setIsAppointmentModalOpen}
+        user={user}
+        language={language}
+      />
 
       {/* Confirmation Dialog */}
       <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>

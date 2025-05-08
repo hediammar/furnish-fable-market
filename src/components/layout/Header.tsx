@@ -59,8 +59,8 @@ const Header: React.FC = () => {
     <header className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
       <div className="container-custom">
         <div className="flex items-center justify-between py-4">
-          <Link to="/" className="font-serif text-2xl sm:text-3xl font-bold text-furniture-brown">
-            Meubles <span className="font-light">Karim</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/MKLogo.png" alt="Meubles Karim Logo" className="h-12 w-auto" />
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">

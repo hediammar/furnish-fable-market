@@ -19,6 +19,7 @@ import Footer from "./components/layout/Footer";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Search from "./pages/Search";
+import Sustainability from "./pages/Sustainability";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -70,6 +71,7 @@ const App = () => {
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/search" element={<Search />} />
+                    <Route path="/sustainability" element={<Sustainability />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/checkout/success" element={<CheckoutSuccess />} />
                     

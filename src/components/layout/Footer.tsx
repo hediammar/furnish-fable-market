@@ -59,11 +59,11 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#181511] text-white pt-16 pb-8 font-sans">
+    <footer className="bg-[#000000] text-white pt-16 pb-8 font-sans">
       {/* Logo and name */}
       <div className="flex flex-col items-center mb-12">
         <span className="text-4xl font-serif font-semibold tracking-widest mb-2">Meubles Karim</span>
-        <div className={`${gold} text-3xl mb-2`}>★</div>
+        <div className={`${gold} text-3xl mb-2`}>★★★★★</div>
       </div>
       {/* Main columns */}
       <div className="container-custom mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">

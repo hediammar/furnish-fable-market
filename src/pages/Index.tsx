@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,9 +13,18 @@ import { fetchProducts, fetchFeaturedProducts } from '@/services/productService'
 import { fetchCategories } from '@/services/categoryService';
 import { fetchPartners } from '@/services/partnerService';
 import { useLanguage } from '@/context/LanguageContext';
+import ModernMinimalistSection from '@/components/home/ModernMinimalistSection';
+import StatsSection from '@/components/home/StatsSection';
+import ModernStyleSection from '@/components/home/ModernStyleSection';
+import CategoryShowcaseSection from '@/components/home/CategoryShowcaseSection';
+import RendezVousModal from '@/components/ui/RendezVousModal';
+import { useAuth } from '@/context/AuthContext';
+import { Separator } from '@radix-ui/react-separator';
 
 const Index: React.FC = () => {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const [isRendezVousOpen, setIsRendezVousOpen] = useState(false);
 
   // Fetch featured products
   const { data: products = [] } = useQuery({
@@ -130,7 +139,40 @@ const Index: React.FC = () => {
         >
           <Hero />
         </motion.div>
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "0px" }}
+          variants={sectionVariants}
+          className="relative z-20"
+        >
+          <CategoryShowcaseSection 
+            title={language === 'fr' ? 'Explorez Notre Collection' : 'Explore Our Proudly Collection'}
+            subtitle={language === 'fr' ? 'Découvrez nos catégories de meubles les plus appréciées.' : 'Discover our most beloved furniture categories.'}
+            categories={categories.slice(0, 6)}
+          />
+        </motion.div>
         
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "0px" }}
+          variants={sectionVariants}
+          className="relative z-20"
+        >
+          <StatsSection />
+        </motion.div>
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "0px" }}
+          variants={sectionVariants}
+          className="relative z-20"
+        >
+          <ModernStyleSection onRendezVousClick={() => setIsRendezVousOpen(true)} />
+        </motion.div>
+        
+       
         <motion.div 
           initial="hidden"
           whileInView="visible"
@@ -145,23 +187,6 @@ const Index: React.FC = () => {
               : "Discover our most popular pieces, carefully selected for your home"
             }
             products={products} 
-          />
-        </motion.div>
-        
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "0px" }}
-          variants={sectionVariants}
-          className="relative z-20"
-        >
-          <CategorySection 
-            title={language === 'fr' ? "Nos Catégories" : "Our Categories"} 
-            subtitle={language === 'fr' 
-              ? "Explorez notre gamme diversifiée de catégories de meubles" 
-              : "Explore our diverse range of furniture categories"
-            }
-            categories={categories.slice(0, 3)} 
           />
         </motion.div>
         
@@ -195,7 +220,12 @@ const Index: React.FC = () => {
           <NewsletterSection />
         </motion.div>
 
-        
+        <RendezVousModal
+          open={isRendezVousOpen}
+          onOpenChange={setIsRendezVousOpen}
+          user={user}
+          language={language}
+        />
       </div>
     </AnimatePresence>
   );
