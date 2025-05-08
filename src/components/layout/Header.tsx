@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail, Calendar } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut, Package, Home, Grid, Info, Mail, Calendar, Image } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CartSidebar from '../cart/CartSidebar';
 import { useCart } from '@/context/CartContext';
@@ -113,6 +113,11 @@ const Header: React.FC = () => {
               </NavigationMenuList>
             </NavigationMenu>
             
+            <Link to="/projects" className="nav-link text-sm font-medium flex items-center gap-1">
+              <Image size={18} />
+              <span>{language === 'fr' ? 'Projets' : 'Projects'}</span>
+            </Link>
+            
             <Link to="/about" className="nav-link text-sm font-medium flex items-center gap-1">
               <Info size={18} />
               <span>{t('about')}</span>
@@ -219,6 +224,14 @@ const Header: React.FC = () => {
               >
                 <Grid size={18} />
                 <span>{t('products')}</span>
+              </Link>
+              <Link 
+                to="/projects" 
+                className="nav-link text-lg font-medium py-2 flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Image size={18} />
+                <span>{language === 'fr' ? 'Projets' : 'Projects'}</span>
               </Link>
               {categories.map((category) => (
                 <Link 

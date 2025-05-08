@@ -59,6 +59,7 @@ const PartnersManagement: React.FC = () => {
     description: '',
     images: [],
     products: [],
+    project_category: 'All',
   });
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -272,6 +273,7 @@ const PartnersManagement: React.FC = () => {
           description: projectData.description,
           images: projectData.images,
           products: projectData.products,
+          project_category: projectData.project_category,
         }])
         .select()
         .single();
@@ -412,6 +414,7 @@ const PartnersManagement: React.FC = () => {
       description: '',
       images: [],
       products: [],
+      project_category: 'All',
     });
     setProjectImages([]);
     setSelectedPartnerId(null);
@@ -472,6 +475,7 @@ const PartnersManagement: React.FC = () => {
       description: '',
       images: [],
       products: [],
+      project_category: 'All',
     });
     setProjectImages([]);
     setIsProjectDialogOpen(true);
@@ -558,6 +562,7 @@ const PartnersManagement: React.FC = () => {
       description: project.description,
       images: project.images,
       products: project.products,
+      project_category: project.project_category,
     });
     setProjectImages([]);
     setIsProjectDialogOpen(true);
@@ -946,6 +951,27 @@ const PartnersManagement: React.FC = () => {
                   rows={3}
                   required
                 />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="project-category" className="text-right">
+                  {t('partners.projectCategory')}
+                </Label>
+                <Select
+                  value={projectFormData.project_category}
+                  onValueChange={(value) => setProjectFormData({...projectFormData, project_category: value as Project['project_category']})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder={t('partners.selectCategory')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">{t('partners.categories.all')}</SelectItem>
+                    <SelectItem value="Hotels">{t('partners.categories.hotels')}</SelectItem>
+                    <SelectItem value="Villas">{t('partners.categories.villas')}</SelectItem>
+                    <SelectItem value="Restaurants">{t('partners.categories.restaurants')}</SelectItem>
+                    <SelectItem value="Coffee shops">{t('partners.categories.coffeeShops')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">

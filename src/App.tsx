@@ -37,6 +37,7 @@ import HeroManagement from "./pages/admin/HeroManagement";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import EstimatesManagement from "./pages/admin/EstimatesManagement";
 import PartnerProjects from '@/pages/PartnerProjects';
+import Projects from '@/pages/Projects';
 import LoadingOverlay from './components/layout/LoadingOverlay';
 import { useState } from 'react';
 import AppointmentsPage from './pages/AppointmentsPage';
@@ -100,6 +101,9 @@ const App = () => {
                     
                     {/* Partner Projects Route */}
                     <Route path="/partners/:id" element={<PartnerProjects />} />
+                    
+                    {/* Projects Route */}
+                    <Route path="/projects" element={<Projects />} />
                     
                     {/* 404 Route */}
                     <Route path="*" element={<NotFound />} />

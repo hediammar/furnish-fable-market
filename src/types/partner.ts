@@ -17,6 +17,7 @@ export interface Project {
   description: string;
   images: string[];
   products: string[];
+  project_category?: 'All' | 'Hotels' | 'Villas' | 'Restaurants' | 'Coffee shops';
 }
 
 // Define database schema types for type safety with Supabase
