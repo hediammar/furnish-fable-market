@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { fetchCategories, fetchSubcategories } from '@/services/categoryService';
+import { fetchMaterials, fetchTextiles } from '@/services/materialService';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,8 @@ const productSchema = z.object({
   inStock: z.boolean().default(true),
   category: z.string().optional(),
   subcategory: z.string().optional(),
-  material: z.string().optional(),
+  material_id: z.string().optional(),
+  textile_id: z.string().optional(),
   dimensions: z.string().optional(),
   featured: z.boolean().default(false),
   new: z.boolean().default(false),
@@ -108,7 +110,8 @@ const EditProductForm: React.FC = () => {
       inStock: true,
       category: '',
       subcategory: '',
-      material: '',
+      material_id: '',
+      textile_id: '',
       dimensions: '',
       featured: false,
       new: false,
@@ -133,6 +136,16 @@ const EditProductForm: React.FC = () => {
     queryKey: ['subcategories', selectedCategoryId],
     queryFn: () => selectedCategoryId ? fetchSubcategories(selectedCategoryId) : Promise.resolve([]),
     enabled: !!selectedCategoryId,
+  });
+
+  const { data: materials = [], isLoading: isMaterialsLoading } = useQuery({
+    queryKey: ['materials'],
+    queryFn: fetchMaterials,
+  });
+
+  const { data: textiles = [], isLoading: isTextilesLoading } = useQuery({
+    queryKey: ['textiles'],
+    queryFn: fetchTextiles,
   });
 
   useEffect(() => {
@@ -170,14 +183,17 @@ const EditProductForm: React.FC = () => {
             inStock: Boolean(appProduct.inStock),
             category: appProduct.category || undefined,
             subcategory: appProduct.subcategory || undefined,
-            material: appProduct.material || '',
+            material_id: appProduct.material || '',
+            textile_id: appProduct.textile || '',
             dimensions: appProduct.dimensions || '',
             featured: Boolean(appProduct.featured),
-            image_nobg: appProduct.image_nobg || '',
             new: Boolean(appProduct.new),
+            color: appProduct.color || '#000000',
             colors: appProduct.colors || [],
             sizes: appProduct.sizes || [],
             weight: appProduct.weight || '',
+            image_nobg: appProduct.image_nobg || '',
+            image: appProduct.image || '',
             assembly: appProduct.assembly || '',
             warranty: appProduct.warranty || '',
           });
@@ -212,7 +228,8 @@ const EditProductForm: React.FC = () => {
           stock: values.stock,
           category: values.category,
           subcategory: values.subcategory,
-          material: values.material,
+          material_id: values.material_id,
+          textile_id: values.textile_id,
           dimensions: values.dimensions,
           is_featured: values.featured,
           is_new: values.new,
@@ -495,18 +512,74 @@ const EditProductForm: React.FC = () => {
                   />
                   <FormField
                     control={form.control}
-                    name="material"
+                    name="material_id"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Material</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value || ""}
+                            disabled={isMaterialsLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select material" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {materials.map((material) => (
+                                <SelectItem key={material.id} value={material.id}>
+                                  <div className="flex items-center space-x-2">
+                                    <img 
+                                      src={material.image_url} 
+                                      alt={material.name}
+                                      className="w-6 h-6 object-cover rounded"
+                                    />
+                                    <span>{material.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+                  <FormField
+                    control={form.control}
+                    name="textile_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Textile</FormLabel>
+                        <FormControl>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value || ""}
+                            disabled={isTextilesLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select textile" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {textiles.map((textile) => (
+                                <SelectItem key={textile.id} value={textile.id}>
+                                  <div className="flex items-center space-x-2">
+                                    <img 
+                                      src={textile.image_url} 
+                                      alt={textile.name}
+                                      className="w-6 h-6 object-cover rounded"
+                                    />
+                                    <span>{textile.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="dimensions"

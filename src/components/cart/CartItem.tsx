@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -31,7 +30,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
       {/* Product Image */}
       <div className="w-20 h-20 rounded overflow-hidden flex-shrink-0">
         <img
-          src={product.images[0]}
+          src={product.images?.[0] || '/placeholder-image.jpg'}
           alt={product.name}
           className="w-full h-full object-cover"
         />

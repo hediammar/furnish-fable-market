@@ -35,7 +35,7 @@ const CategoryShowcaseSection: React.FC<Props> = ({ title, subtitle, categories 
           <div className="flex flex-col items-end gap-1 md:gap-4 md:w-1/2">
             <Link
               to="/products"
-              className="inline-flex items-center bg-gray-900 text-white px-3 md:px-5 py-2 rounded-md font-medium hover:bg-gray-700 transition-colors duration-300 text-xs md:text-sm self-end"
+              className="inline-flex items-center bg-[#d2ac30] text-white px-3 md:px-5 py-2 rounded-md font-medium hover:bg-[#ffe48b] transition-colors duration-300 text-xs md:text-sm self-end"
             >
               View More <ArrowRight className="ml-2 w-4 h-4" />
             </Link>

@@ -60,6 +60,8 @@ const AdminDashboard = () => {
   const navItems = [
     { title: 'Overview', icon: <LayoutDashboard size={20} />, path: '/admin' },
     { title: 'Products', icon: <Package size={20} />, path: '/admin/products' },
+    { title: 'Materials', icon: <Tag size={20} />, path: '/admin/materials' },
+    { title: 'Textiles', icon: <Image size={20} />, path: '/admin/textiles' },
     { title: 'Orders', icon: <ShoppingBag size={20} />, path: '/admin/orders' },
     { title: 'Categories', icon: <Tag size={20} />, path: '/admin/categories' },
     { title: 'Users', icon: <Users size={20} />, path: '/admin/users' },

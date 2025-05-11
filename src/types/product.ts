@@ -7,7 +7,8 @@ export interface Product {
   images: string[];
   category: string;
   subcategory: string;
-  material: string;
+  material_id: string;
+  textile_id: string;
   dimensions: string;
   designer?: string;
   year?: string;
@@ -16,12 +17,22 @@ export interface Product {
   featured?: boolean;
   new?: boolean;
   discount?: number;
-  formattedPrice?: string; // Added formattedPrice property
-  colors?: string[];
+  formattedPrice?: string;
   sizes?: string[];
   weight?: string;
   assembly?: string;
   warranty?: string;
+  // These will be populated when fetching the product
+  material?: {
+    id: string;
+    name: string;
+    image_url: string;
+  };
+  textile?: {
+    id: string;
+    name: string;
+    image_url: string;
+  };
 }
 
 export interface CartItem {

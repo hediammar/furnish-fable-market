@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createProduct } from '@/services/productService';
 import { fetchCategories, fetchSubcategories } from '@/services/categoryService';
+import { fetchMaterials, fetchTextiles } from '@/services/materialService';
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle, ArrowLeft, Loader2, Save, Upload, X, Plus } from 'lucide-react';
@@ -49,7 +50,8 @@ const productSchema = z.object({
   category: z.string().min(1, { message: 'Please select a category' }),
   subcategory: z.string().min(1, { message: 'Please select a subcategory' }),
   stock: z.coerce.number().int().nonnegative({ message: 'Stock must be a non-negative integer' }),
-  material: z.string().optional(),
+  material_id: z.string().optional(),
+  textile_id: z.string().optional(),
   dimensions: z.string().optional(),
   image_nobg: z.string().optional(),
   images: z.array(z.string()).default([]),
@@ -84,7 +86,8 @@ const AddProductForm = () => {
       category: '',
       subcategory: '',
       stock: 0,
-      material: '',
+      material_id: '',
+      textile_id: '',
       dimensions: '',
       image_nobg: '',
       images: [],
@@ -112,6 +115,16 @@ const AddProductForm = () => {
     enabled: !!selectedCategoryId,
   });
   
+  const { data: materials = [], isLoading: isMaterialsLoading } = useQuery({
+    queryKey: ['materials'],
+    queryFn: fetchMaterials,
+  });
+
+  const { data: textiles = [], isLoading: isTextilesLoading } = useQuery({
+    queryKey: ['textiles'],
+    queryFn: fetchTextiles,
+  });
+  
   const productMutation = useMutation({
     mutationFn: (data: ProductFormValues) => {
       const productData: Omit<Product, 'id'> = {
@@ -125,7 +138,8 @@ const AddProductForm = () => {
         images: data.images || [],
         inStock: data.inStock ?? true,
         stock: data.stock,
-        material: data.material,
+        material_id: data.material_id,
+        textile_id: data.textile_id,
         dimensions: data.dimensions,
         featured: data.featured,
         new: data.new,
@@ -454,7 +468,7 @@ const AddProductForm = () => {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="material"
+                  name="material_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Material</FormLabel>
@@ -462,14 +476,22 @@ const AddProductForm = () => {
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value || ""}
+                          disabled={isMaterialsLoading}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select material" />
                           </SelectTrigger>
                           <SelectContent>
-                            {AVAILABLE_MATERIALS.map((material) => (
-                              <SelectItem key={material} value={material}>
-                                {material}
+                            {materials.map((material) => (
+                              <SelectItem key={material.id} value={material.id}>
+                                <div className="flex items-center space-x-2">
+                                  <img 
+                                    src={material.image_url} 
+                                    alt={material.name}
+                                    className="w-6 h-6 object-cover rounded"
+                                  />
+                                  <span>{material.name}</span>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -480,6 +502,44 @@ const AddProductForm = () => {
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="textile_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Textile</FormLabel>
+                      <FormControl>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || ""}
+                          disabled={isTextilesLoading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select textile" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {textiles.map((textile) => (
+                              <SelectItem key={textile.id} value={textile.id}>
+                                <div className="flex items-center space-x-2">
+                                  <img 
+                                    src={textile.image_url} 
+                                    alt={textile.name}
+                                    className="w-6 h-6 object-cover rounded"
+                                  />
+                                  <span>{textile.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="dimensions"
@@ -494,7 +554,9 @@ const AddProductForm = () => {
                   )}
                 />
               </div>
-              
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <FormField
                   control={form.control}

@@ -14,8 +14,8 @@ export interface ProductFilterOptions {
   sort?: string;
   minPrice?: number;
   maxPrice?: number;
-  materials?: string[];
-  colors?: string[];
+  material_ids?: string[];
+  textile_ids?: string[];
   stock?: boolean;
   new?: boolean;
 }
@@ -24,7 +24,11 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
   try {
     let query = supabase
       .from('products')
-      .select('*');
+      .select(`
+        *,
+        material:materials(id, name, image_url),
+        textile:textiles(id, name, image_url)
+      `);
 
     // Apply category filter
     if (options.category) {
@@ -60,13 +64,13 @@ export const fetchProducts = async (options: ProductFilterOptions = {}): Promise
     }
 
     // Apply materials filter
-    if (options.materials && options.materials.length > 0) {
-      query = query.in('material', options.materials);
+    if (options.material_ids && options.material_ids.length > 0) {
+      query = query.in('material_id', options.material_ids);
     }
 
-    // Apply colors filter
-    if (options.colors && options.colors.length > 0) {
-      query = query.contains('colors', options.colors);
+    // Apply textiles filter
+    if (options.textile_ids && options.textile_ids.length > 0) {
+      query = query.in('textile_id', options.textile_ids);
     }
 
     // Apply sorting
@@ -116,7 +120,11 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        material:materials(id, name, image_url),
+        textile:textiles(id, name, image_url)
+      `)
       .eq('id', id)
       .single();
     
@@ -225,7 +233,6 @@ export const createProduct = async (product: Omit<Product, 'id'>): Promise<Produ
         is_featured: product.featured || false,
         is_new: product.new || false,
         discount: product.discount || 0,
-        colors: product.colors || [],
         sizes: product.sizes || [],
         weight: product.weight,
         assembly: product.assembly,

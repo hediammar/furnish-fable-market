@@ -43,6 +43,8 @@ import LoadingOverlay from './components/layout/LoadingOverlay';
 import { useState } from 'react';
 import AppointmentsPage from './pages/AppointmentsPage';
 import AppointmentsManagement from './pages/admin/AppointmentsManagement';
+import Materials from "./pages/admin/Materials";
+import Textiles from "./pages/admin/Textiles";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +100,8 @@ const App = () => {
                         <Route path="partners" element={<PartnersManagement />} />
                         <Route path="estimates" element={<EstimatesManagement />} />
                         <Route path="appointments" element={<AppointmentsManagement />} />
+                        <Route path="materials" element={<Materials />} />
+                        <Route path="textiles" element={<Textiles />} />
                       </Route>
                     </Route>
                     

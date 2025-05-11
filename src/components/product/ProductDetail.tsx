@@ -12,7 +12,6 @@ interface ProductDetailProps {
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState<string>(product.colors?.[0] || '');
   const [selectedSize, setSelectedSize] = useState<string>(product.sizes?.[0] || '');
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -26,7 +25,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedColor, selectedSize);
+    addToCart(product, quantity, selectedSize);
   };
 
   const incrementQuantity = () => {
@@ -198,7 +197,30 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8">
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">{language === 'fr' ? 'Matériau' : 'Material'}</h3>
-                <p className="text-muted-foreground">{product.material}</p>
+                <div className="flex items-center space-x-2">
+                  {product.material?.image_url && (
+                    <img 
+                      src={product.material.image_url} 
+                      alt={product.material.name}
+                      className="w-8 h-8 object-cover rounded"
+                    />
+                  )}
+                  <p className="text-muted-foreground">{product.material?.name}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">{language === 'fr' ? 'Textile' : 'Textile'}</h3>
+                <div className="flex items-center space-x-2">
+                  {product.textile?.image_url && (
+                    <img 
+                      src={product.textile.image_url} 
+                      alt={product.textile.name}
+                      className="w-8 h-8 object-cover rounded"
+                    />
+                  )}
+                  <p className="text-muted-foreground">{product.textile?.name}</p>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -206,29 +228,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <p className="text-muted-foreground">{product.dimensions}</p>
               </div>
             </div>
-
-            {/* Color Selection */}
-            {product.colors && product.colors.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">{language === 'fr' ? 'Couleur' : 'Color'}</h3>
-                <div className="flex flex-wrap gap-2 ">
-                  {product.colors.map((color) => (
-                    <Button
-                      key={color}
-                      variant={selectedColor === color ? 'default' : 'outline'}
-                      className="flex items-center gap-2"
-                      onClick={() => setSelectedColor(color)}
-                    >
-                      <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span>{color}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Size Selection */}
             {product.sizes && product.sizes.length > 0 && (

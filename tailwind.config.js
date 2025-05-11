@@ -6,6 +6,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        sans: ['Playfair Display', 'serif'],
+        serif: ['Playfair Display', 'serif'],
         cinzel: ['Cinzel', 'serif'],
         cormorant: ['Cormorant Garamond', 'serif'],
       },

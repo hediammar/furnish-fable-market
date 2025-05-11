@@ -6,7 +6,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Product } from '@/types/product';
 import { ProductFilterOptions, fetchProducts } from '@/services/productService';
 import { fetchCategories, fetchSubcategories, fetchAllSubcategories } from '@/services/categoryService';
+import { fetchMaterials, fetchTextiles } from '@/services/materialService';
 import { Category, Subcategory } from '@/types/category';
+import { Material } from '@/types/material';
+import { Textile } from '@/types/textile';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,9 +41,11 @@ const Products: React.FC = () => {
   const [sortOption, setSortOption] = useState<string>('newest');
   const [priceRange, setPriceRange] = useState<number[]>([0, 1000]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [selectedTextiles, setSelectedTextiles] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
-  const [availableMaterials, setAvailableMaterials] = useState<string[]>([]);
+  const [availableMaterials, setAvailableMaterials] = useState<Material[]>([]);
+  const [availableTextiles, setAvailableTextiles] = useState<Textile[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -61,26 +66,24 @@ const Products: React.FC = () => {
   }, [searchQuery, sortOption, priceRange, selectedMaterials, selectedCategories, selectedSubcategory]);
 
   useEffect(() => {
-    const fetchMaterials = async () => {
+    const fetchMaterialsAndTextiles = async () => {
       setLoading(true);
       try {
-        const allProducts = await fetchProducts();
-        const materials = new Set<string>();
-        allProducts.forEach(product => {
-          if (product.material) {
-            materials.add(product.material);
-          }
-        });
-        setAvailableMaterials(Array.from(materials));
+        const [materials, textiles] = await Promise.all([
+          fetchMaterials(),
+          fetchTextiles()
+        ]);
+        setAvailableMaterials(materials);
+        setAvailableTextiles(textiles);
       } catch (error) {
-        console.error('Error fetching materials:', error);
-        setError(language === 'fr' ? 'Erreur lors du chargement des matériaux' : 'Error loading materials');
+        console.error('Error fetching materials and textiles:', error);
+        setError(language === 'fr' ? 'Erreur lors du chargement des matériaux et textiles' : 'Error loading materials and textiles');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMaterials();
+    fetchMaterialsAndTextiles();
   }, [language]);
 
   useEffect(() => {
@@ -137,7 +140,8 @@ const Products: React.FC = () => {
       const filterOptions: ProductFilterOptions = {
         search: searchQuery || undefined,
         sort: sortOption,
-        materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+        material_ids: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+        textile_ids: selectedTextiles.length > 0 ? selectedTextiles : undefined,
         categories: selectedCategories.length > 0 ? selectedCategories : undefined,
         subcategory: selectedSubcategory !== 'all' ? selectedSubcategory : undefined,
         minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
@@ -148,16 +152,6 @@ const Products: React.FC = () => {
       const data = await fetchProducts(filterOptions);
       console.log(`Found ${data.length} products`);
       setProducts(data);
-      
-      // Extract unique materials from products for filter options
-      if (data.length > 0 && availableMaterials.length === 0) {
-        const materials = data
-          .map(product => product.material)
-          .filter((material): material is string => !!material)
-          .filter((value, index, self) => self.indexOf(value) === index);
-        
-        setAvailableMaterials(materials);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while fetching products');
     } finally {
@@ -211,6 +205,7 @@ const Products: React.FC = () => {
   const clearFilters = () => {
     setPriceRange([0, 1000]);
     setSelectedMaterials([]);
+    setSelectedTextiles([]);
     setSelectedCategories([]);
     setSelectedSubcategory('all');
     setSortOption('newest');
@@ -333,14 +328,37 @@ const Products: React.FC = () => {
           )}
 
           {/* Materials Dropdown */}
-          <Select value={selectedMaterials[0] || "all"} onValueChange={value => setSelectedMaterials(value === "all" ? [] : [value])}>
+          <Select 
+            value={selectedMaterials[0] || "all"} 
+            onValueChange={value => setSelectedMaterials(value === "all" ? [] : [value])}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={language === 'fr' ? 'Matériaux' : 'Materials'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{language === 'fr' ? 'Voir tout' : 'View All'}</SelectItem>
               {availableMaterials.map(material => (
-                <SelectItem key={material} value={material}>{material}</SelectItem>
+                <SelectItem key={material.id} value={material.id}>
+                  {material.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Textiles Dropdown */}
+          <Select 
+            value={selectedTextiles[0] || "all"} 
+            onValueChange={value => setSelectedTextiles(value === "all" ? [] : [value])}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={language === 'fr' ? 'Textiles' : 'Textiles'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{language === 'fr' ? 'Voir tout' : 'View All'}</SelectItem>
+              {availableTextiles.map(textile => (
+                <SelectItem key={textile.id} value={textile.id}>
+                  {textile.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

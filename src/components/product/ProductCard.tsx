@@ -53,12 +53,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         {/* Tags */}
         <div className="absolute top-3 left-3 flex space-x-2">
           {product.new && (
-            <span className="bg-[#d2ac35] text-black text-xs font-bold px-2 py-1 rounded">
+            <span className="bg-[ac35] text-black text-xs font-bold px-2 py-1 rounded">
               {language === 'fr' ? 'NOUVEAU' : 'NEW'}
             </span>
           )}
           {product.featured && (
-            <span className="bg-[#000000] text-[#d2ac35] text-xs font-bold px-2 py-1 rounded">
+            <span className="bg-[#000000] text-[ac35] text-xs font-bold px-2 py-1 rounded">
               {language === 'fr' ? 'EN TENDANCE' : 'IN TREND'}
             </span>
           )}
